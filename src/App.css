@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@import "tailwindcss";
+
+html, body {
+    overflow-x: scroll;
+    overflow-y: scroll;
+    scrollbar-width: none;
+    font-family: "Neue Montreal", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-weight: 300;
+    letter-spacing: -0.03vw;
+}
