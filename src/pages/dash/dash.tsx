@@ -273,27 +273,6 @@ function Info() {
         </Card.Root>
         </Flex> 
     )
-}
-
-function Info2() {
-  useEffect(() => {
-    // Load ElevenLabs script dynamically
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/@elevenlabs/convai-widget-embed";
-    script.async = true;
-    script.type = "text/javascript";
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
-  return (
-    <Flex mt="2vw" justify="center">
-      <elevenlabs-convai agent-id="agent_8101k50wyt85f0d8qp99ntvzmxnq"></elevenlabs-convai>
-    </Flex>
-  );
-}
+  }
 
 export default Dashboard;
