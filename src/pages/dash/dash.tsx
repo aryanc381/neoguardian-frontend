@@ -1,4 +1,4 @@
-import { Card, Flex, Heading, Text } from "@chakra-ui/react"
+import { Card, Flex, Heading, Input, Text } from "@chakra-ui/react"
 import { Button } from "@chakra-ui/react"
 import  { useState, useEffect } from "react";
 import { Box } from "@chakra-ui/react";
@@ -22,6 +22,7 @@ import {
 function Dashboard() {
   return (
     <Flex>
+      <Toaster />
         <Flex direction={"column"}>
             <PatientInfo />
             <Helpline />
@@ -70,25 +71,182 @@ function Helpline() {
     )
 }
 
+import {
+
+  Dialog,
+  Portal,
+  CloseButton,
+} from "@chakra-ui/react";
+import { Toaster, toaster } from "../../components/ui/toaster";
+
+
 function Tools() {
-    return(
-        <Flex>
-        <Card.Root size="lg" width={{md: "30vw"}} mt={{md: "1vw"}} ml={{md: "1vw"}} letterSpacing={{md: "-0.04vw"}}>
-            <Card.Header>
-            <Heading size="2xl">Screening Tools</Heading>
-            </Card.Header>
-            <Card.Body mt={{md: "-1vw"}} color="fg.success">
-                <Flex justifyContent={{md: "flex-start"}} gap={{md: "0.5vw"}}>
-                    <Button width={{md: "6vw"}}>PHQ-9</Button>
-                    <Button width={{md: "6vw"}}>GAD-7</Button>
-                    <Button width={{md: "6vw"}}>GAD-2</Button>
-                    <Button width={{md: "6vw"}}>GHQ</Button>
-                </Flex>
-            </Card.Body>
-        </Card.Root>
-        </Flex> 
-    )
+  const [activeTool, setActiveTool] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<Record<string, Record<string, string>>>(
+    {}
+  );
+
+  const screeningTools: Record<string, { title: string; questions: string[] }> = {
+    "PHQ-9": {
+      title: "Patient Health Questionnaire-9",
+      questions: [
+        "Little interest or pleasure in doing things?",
+        "Feeling down, depressed, or hopeless?",
+        "Trouble falling or staying asleep, or sleeping too much?",
+        "Feeling tired or having little energy?",
+        "Poor appetite or overeating?",
+        "Feeling bad about yourself or that you are a failure?",
+        "Trouble concentrating on things?",
+        "Moving or speaking so slowly that other people could notice?",
+        "Thoughts that you would be better off dead?",
+      ],
+    },
+    "GAD-7": {
+      title: "Generalized Anxiety Disorder-7",
+      questions: [
+        "Feeling nervous, anxious, or on edge?",
+        "Not being able to stop or control worrying?",
+        "Worrying too much about different things?",
+        "Trouble relaxing?",
+        "Being so restless that it's hard to sit still?",
+        "Becoming easily annoyed or irritable?",
+        "Feeling afraid as if something awful might happen?",
+      ],
+    },
+    "GAD-2": {
+      title: "Generalized Anxiety Disorder-2",
+      questions: [
+        "Feeling nervous, anxious, or on edge?",
+        "Not being able to stop or control worrying?",
+      ],
+    },
+    GHQ: {
+      title: "General Health Questionnaire",
+      questions: [
+        "Have you recently been able to concentrate on what you’re doing?",
+        "Have you recently lost much sleep over worry?",
+        "Have you recently felt constantly under strain?",
+        "Have you recently felt you couldn’t overcome difficulties?",
+        "Have you recently been feeling unhappy and depressed?",
+      ],
+    },
+  };
+
+  const handleChange = (tool: string, question: string, value: string) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [tool]: { ...prev[tool], [question]: value },
+    }));
+  };
+
+  // Handle Send button click
+  const handleSend = (tool: string) => {
+    toaster.create({
+      description: `${tool} answers submitted successfully!`,
+      type: "success",
+    });
+  };
+
+  // Handle PDF generation
+  const handleGeneratePDF = (tool: string) => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text(`${tool} - ${screeningTools[tool].title}`, 10, 10);
+
+    let y = 20;
+    screeningTools[tool].questions.forEach((q, idx) => {
+      const answer = answers[tool]?.[q] || "";
+      doc.setFontSize(12);
+      doc.text(`${idx + 1}. ${q}`, 10, y);
+      y += 7;
+      doc.text(`Answer: ${answer}`, 12, y);
+      y += 10;
+    });
+
+    doc.save(`${tool}_answers.pdf`);
+  };
+
+  return (
+    <Flex>
+      <Card.Root
+        size="lg"
+        width={{ md: "30vw" }}
+        mt={{ md: "1vw" }}
+        ml={{ md: "1vw" }}
+        letterSpacing={{ md: "-0.04vw" }}
+      >
+        <Card.Header>
+          <Heading size="2xl">Screening Tools</Heading>
+        </Card.Header>
+        <Card.Body mt={{ md: "-1vw" }} color="fg.success">
+          <Flex justifyContent={{ md: "flex-start" }} gap={{ md: "0.5vw" }}>
+            {["PHQ-9", "GAD-7", "GAD-2", "GHQ"].map((tool) => (
+              <Dialog.Root
+                key={tool}
+                open={activeTool === tool}
+                onOpenChange={(details) =>
+                  setActiveTool(details.open ? tool : null)
+                }
+              >
+                <Dialog.Trigger asChild>
+                  <Button width={{ md: "6vw" }}>{tool}</Button>
+                </Dialog.Trigger>
+
+                <Portal>
+                  <Dialog.Backdrop />
+                  <Dialog.Positioner>
+                    <Dialog.Content>
+                      <Dialog.Header>
+                        <Dialog.Title>{screeningTools[tool].title}</Dialog.Title>
+                      </Dialog.Header>
+
+                      <Dialog.Body>
+                        <Flex direction="column" gap="1rem">
+                          {screeningTools[tool].questions.map((q, idx) => (
+                            <Flex key={idx} direction="column" gap="0.5rem">
+                              <label>{q}</label>
+                              <Input
+                                placeholder="Type your answer here"
+                                value={answers[tool]?.[q] || ""}
+                                onChange={(e) =>
+                                  handleChange(tool, q, e.target.value)
+                                }
+                              />
+                            </Flex>
+                          ))}
+                        </Flex>
+                      </Dialog.Body>
+
+                      <Dialog.Footer>
+                        <Dialog.ActionTrigger asChild>
+                          <Button variant="outline">Cancel</Button>
+                        </Dialog.ActionTrigger>
+                        <Button colorScheme="green" onClick={() => handleSend(tool)}>
+                          Submit
+                        </Button>
+                        <Button
+                          colorScheme="blue"
+                          onClick={() => handleGeneratePDF(tool)}
+                        >
+                          Generate PDF
+                        </Button>
+                      </Dialog.Footer>
+
+                      <Dialog.CloseTrigger asChild>
+                        <CloseButton size="sm" />
+                      </Dialog.CloseTrigger>
+                    </Dialog.Content>
+                  </Dialog.Positioner>
+                </Portal>
+              </Dialog.Root>
+            ))}
+          </Flex>
+        </Card.Body>
+      </Card.Root>
+    </Flex>
+  );
 }
+
 
 
 function Report() {
@@ -199,7 +357,7 @@ function Report() {
     if (finalY > 240) doc.addPage(), (finalY = 20);
     doc.setFontSize(14);
     doc.text("Reviewed By:", 14, finalY);
-    doc.text("Dr. Adarsh (MD, Psychiatry)", 20, finalY + 10);
+    doc.text("Dr. Ramesh Kulkarni (MD, Psychiatry)", 20, finalY + 10);
     doc.text("Signature: ____________________", 20, finalY + 20);
 
     // Footer
