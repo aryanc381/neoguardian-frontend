@@ -357,7 +357,7 @@ function Report() {
     if (finalY > 240) doc.addPage(), (finalY = 20);
     doc.setFontSize(14);
     doc.text("Reviewed By:", 14, finalY);
-    doc.text("Dr. Ramesh Kulkarni (MD, Psychiatry)", 20, finalY + 10);
+    doc.text("Dr. Adarsh (MD, Psychiatry)", 20, finalY + 10);
     doc.text("Signature: ____________________", 20, finalY + 20);
 
     // Footer
