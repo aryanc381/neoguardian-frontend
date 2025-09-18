@@ -18,7 +18,7 @@ import {
   Legend,
   Tooltip,
   XAxis,
-} from "recharts"
+} from "recharts";
 
 function Dashboard() {
   const [chartData, setChartData] = useState([
