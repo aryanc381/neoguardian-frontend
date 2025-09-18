@@ -4,11 +4,12 @@ import  { useState, useEffect } from "react";
 import { Box } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import { Chart, useChart } from "@chakra-ui/charts"
-import { Avatar, defineStyle } from "@chakra-ui/react"
+import { Avatar } from "@chakra-ui/react"
 import { AvatarGroup } from "@chakra-ui/react"
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import "jspdf-autotable"
+import Vapi from '@vapi-ai/web';
 
 import {
   Area,
@@ -527,56 +528,127 @@ function Analysis() {
   )
 }
 
-const ringCss = defineStyle({
-  outlineWidth: "3px",
-  outlineColor: "colorPalette.500",
-  outlineOffset: "2px",
-  outlineStyle: "dotted",
-})
+interface TranscriptMessage {
+  role: string;
+  text: string;
+}
+
 
 function Info() {
-    return(
-        <Flex>
-        <Card.Root size="lg" width={{md: "31vw"}} pt={{md: "1vw"}} mt={{md: "1vw"}} ml={{md: "1vw"}} letterSpacing={{md: "-0.04vw"}}>
-            <Card.Body color="fg.muted" mt={{md: "-1vw"}} fontSize={{md: "1.2vw"}}>
-                <Flex justifyContent={{md: "space-between"}}>
-                    <Text fontSize={"2vw"} fontWeight={{md: "200"}}>Hello, Abhishekh.</Text>
-                    <Avatar.Root css={ringCss} colorPalette="blue">
-                        <Avatar.Fallback name="Random" />
-                        <Avatar.Image src="./image.png" />
-                    </Avatar.Root>
-                </Flex>
-                <Flex>
-                  <Button variant={"solid"} width={"25vw"} p={"3vw"} mt={"3vw"} backgroundColor={"gray.600"} _hover={{backgroundColor: "gray.500"}}>
-                    <Flex justifyContent={"space-between"} gap={"3vw"}>
-                      <Text mt={"0.9vw"} fontSize={"1.2vw"} color={"white"} fontWeight={"300"}><a href="https://elevenlabs.io/app/talk-to?agent_id=agent_8101k50wyt85f0d8qp99ntvzmxnq">Talk with AI</a></Text>
-                      <AvatarGroup gap="0" spaceX="-3" size="lg">
-                        <Avatar.Root>
-                          <Avatar.Fallback name="Uchiha Sasuke" />
-                          <Avatar.Image src="https://cdn.myanimelist.net/r/84x124/images/characters/9/131317.webp?s=d4b03c7291407bde303bc0758047f6bd" />
-                        </Avatar.Root>
+  const [vapi, setVapi] = useState<Vapi | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-                        <Avatar.Root>
-                          <Avatar.Fallback name="Baki Ani" />
-                          <Avatar.Image src="https://cdn.myanimelist.net/r/84x124/images/characters/7/284129.webp?s=a8998bf668767de58b33740886ca571c" />
-                        </Avatar.Root>
+  useEffect(() => {
+    const vapiInstance = new Vapi("0379162b-7353-45ed-9aa6-344b984aae27");
+    setVapi(vapiInstance);
 
-                        <Avatar.Root>
-                          <Avatar.Fallback name="Uchiha Chan" />
-                          <Avatar.Image src="https://cdn.myanimelist.net/r/84x124/images/characters/9/105421.webp?s=269ff1b2bb9abe3ac1bc443d3a76e863" />
-                        </Avatar.Root>
-                        <Avatar.Root variant="solid">
-                          <Avatar.Fallback>+3</Avatar.Fallback>
-                        </Avatar.Root>
-                      </AvatarGroup>
-                    </Flex>
-                  </Button>
-                </Flex>
-                
-            </Card.Body>
-        </Card.Root>
-        </Flex> 
-    )
-  }
+    vapiInstance.on("call-start", () => {
+      setIsConnected(true);
+      setIsLoading(false);
+    });
 
+    vapiInstance.on("call-end", () => {
+      setIsConnected(false);
+      setIsLoading(false);
+    });
+
+    return () => {
+      vapiInstance?.stop();
+    };
+  }, []);
+
+  const startCall = async () => {
+    if (!vapi) return;
+    setIsLoading(true);
+    await vapi.start("905fdf53-1ad4-490d-8ecc-fe48ddf4f8d3");
+  };
+
+  const endCall = async () => {
+    await vapi?.stop();
+    setIsConnected(false);
+    setIsLoading(false);
+  };
+
+  return (
+    <Flex>
+      <Card.Root
+        size="lg"
+        width={{ md: "31vw" }}
+        pt={{ md: "1vw" }}
+        mt={{ md: "1vw" }}
+        ml={{ md: "1vw" }}
+        letterSpacing={{ md: "-0.04vw" }}
+      >
+        <Card.Body color="fg.muted" mt={{ md: "-1vw" }} fontSize={{ md: "1.2vw" }}>
+          <Flex justifyContent={{ md: "space-between" }}>
+            <Text fontSize={"2vw"} fontWeight={{ md: "200" }}>
+              Hello, Abhishekh.
+            </Text>
+            <Avatar.Root colorPalette="blue">
+              <Avatar.Fallback name="Random" />
+              <Avatar.Image src="./image.png" />
+            </Avatar.Root>
+          </Flex>
+
+          {/* AI Button */}
+          <Flex>
+            <Button
+              variant="solid"
+              width="25vw"
+              p="3vw"
+              mt="3vw"
+              bg={
+                isConnected
+                  ? "green.500"
+                  : isLoading
+                  ? "orange.400"
+                  : "gray.600"
+              }
+              _hover={{
+                bg: isConnected
+                  ? "green.400"
+                  : isLoading
+                  ? "orange.300"
+                  : "gray.500",
+              }}
+              onClick={isConnected ? endCall : startCall}
+            >
+              <Flex justifyContent="space-between" gap="3vw" width="100%">
+                <Text mt="0.9vw" fontSize="1.2vw" color="white" fontWeight="300">
+                  {isConnected
+                    ? "Talking to Adarsh"
+                    : isLoading
+                    ? "Loading AI..."
+                    : "Talk with AI"}
+                </Text>
+
+                <AvatarGroup gap="0" spaceX="-3" size="lg">
+                  <Avatar.Root>
+                    <Avatar.Fallback name="Uchiha Sasuke" />
+                    <Avatar.Image src="https://cdn.myanimelist.net/r/84x124/images/characters/9/131317.webp?s=d4b03c7291407bde303bc0758047f6bd" />
+                  </Avatar.Root>
+
+                  <Avatar.Root>
+                    <Avatar.Fallback name="Baki Ani" />
+                    <Avatar.Image src="https://cdn.myanimelist.net/r/84x124/images/characters/7/284129.webp?s=a8998bf668767de58b33740886ca571c" />
+                  </Avatar.Root>
+
+                  <Avatar.Root>
+                    <Avatar.Fallback name="Uchiha Chan" />
+                    <Avatar.Image src="https://cdn.myanimelist.net/r/84x124/images/characters/9/105421.webp?s=269ff1b2bb9abe3ac1bc443d3a76e863" />
+                  </Avatar.Root>
+
+                  <Avatar.Root variant="solid">
+                    <Avatar.Fallback>+3</Avatar.Fallback>
+                  </Avatar.Root>
+                </AvatarGroup>
+              </Flex>
+            </Button>
+          </Flex>
+        </Card.Body>
+      </Card.Root>
+    </Flex>
+  );
+}
 export default Dashboard;
