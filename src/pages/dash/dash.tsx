@@ -135,7 +135,6 @@ function Tools() {
     },
   };
 
-  // Points for options
   const toolPoints: Record<string, Record<string, number>> = {
     "PHQ-9": { "Not at all": 0, "Several days": 1, "More than half the days": 2, "Nearly every day": 3 },
     "GAD-7": { "Not at all": 0, "Several days": 1, "More than half the days": 2, "Nearly every day": 3 },
@@ -143,7 +142,6 @@ function Tools() {
     GHQ: { "Not at all": 0, "No more than usual": 0, "Rather more than usual": 1, "Much more than usual": 2 },
   };
 
-  // Recommendations based on score
   const recommendations: Record<string, { threshold: number; message: string }[]> = {
     "PHQ-9": [
       { threshold: 19, message: "Severe depression" },
@@ -181,7 +179,10 @@ function Tools() {
     screeningTools[tool].questions.every(q => answers[tool]?.[q]);
 
   const calculateScore = (tool: string) =>
-    screeningTools[tool].questions.reduce((total, q) => total + (answers[tool]?.[q] ? toolPoints[tool][answers[tool][q]] : 0), 0);
+    screeningTools[tool].questions.reduce(
+      (total, q) => total + (answers[tool]?.[q] ? toolPoints[tool][answers[tool][q]] : 0),
+      0
+    );
 
   const getRecommendation = (tool: string, score: number) => {
     const recs = recommendations[tool];
@@ -197,8 +198,12 @@ function Tools() {
       return;
     }
     const score = calculateScore(tool);
+    const maxScore = screeningTools[tool].questions.length * Math.max(...Object.values(toolPoints[tool]));
     const rec = getRecommendation(tool, score);
-    toaster.create({ description: `${tool} submitted! Total Score: ${score}. Conclusion: ${rec}`, type: "success" });
+    toaster.create({
+      description: `${tool} submitted! Score: ${score}/${maxScore}. Conclusion: ${rec}`,
+      type: "success"
+    });
   };
 
   const handleGeneratePDF = (tool: string) => {
@@ -208,29 +213,84 @@ function Tools() {
     }
 
     const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text(`${tool} - ${screeningTools[tool].title}`, 10, 10);
+    const score = calculateScore(tool);
+    const maxScore = screeningTools[tool].questions.length * Math.max(...Object.values(toolPoints[tool]));
+    const rec = getRecommendation(tool, score);
 
-    let y = 20;
+    // PDF Header
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${tool} - ${screeningTools[tool].title}`, 10, 15);
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.5);
+    doc.line(10, 18, 200, 18);
+
+    let y = 25;
+
+    // Questions and answers
     screeningTools[tool].questions.forEach((q, idx) => {
       const answer = answers[tool]?.[q] || "";
+      const points = toolPoints[tool][answer];
+      doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
       doc.text(`${idx + 1}. ${q}`, 10, y);
       y += 7;
-      doc.text(`Answer: ${answer} (Points: ${toolPoints[tool][answer]})`, 12, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Answer: ${answer} (Points: ${points})`, 12, y);
       y += 10;
     });
 
-    const score = calculateScore(tool);
-    const rec = getRecommendation(tool, score);
-
+    // Score highlight
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
-    doc.text(`Total Score: ${score}`, 10, y + 5);
+    doc.setTextColor(0, 0, 200);
+    doc.text(`Total Score: ${score} / ${maxScore}`, 10, y + 5);
+
+    // Conclusion
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(0, 0, 0);
     doc.text(`Conclusion: ${rec}`, 10, y + 15);
 
-    doc.save(`${tool}_answers.pdf`);
+    // Recommendations
+    const exerciseRecommendations: Record<string, string[]> = {
+      "PHQ-9": [
+        "Daily 20-min walk or light cardio",
+        "Meditation for 10-15 mins",
+        "Maintain consistent sleep schedule",
+        "Keep a gratitude journal",
+      ],
+      "GAD-7": [
+        "Breathing exercises 2-3 times daily",
+        "Yoga or stretching",
+        "Limit caffeine intake",
+        "Engage in relaxing hobbies",
+      ],
+      "GAD-2": [
+        "Short mindfulness breaks",
+        "Regular physical activity",
+        "Talk to a friend or counselor if anxious",
+      ],
+      GHQ: [
+        "Stress management activities",
+        "Regular physical activity",
+        "Healthy diet and sleep habits",
+      ],
+    };
 
-    toaster.create({ description: `${tool} PDF generated! Total Score: ${score}. Conclusion: ${rec}`, type: "success" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.text("Recommendations:", 10, y + 25);
+    exerciseRecommendations[tool].forEach((rec, i) => {
+      doc.text(`- ${rec}`, 12, y + 35 + i * 7);
+    });
+
+    // Save PDF
+    doc.save(`${tool}_professional_report.pdf`);
+
+    toaster.create({
+      description: `${tool} PDF generated! Score: ${score}/${maxScore}. Conclusion: ${getRecommendation(tool, score)}`,
+      type: "success"
+    });
   };
 
   return (
