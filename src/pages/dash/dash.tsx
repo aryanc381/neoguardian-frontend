@@ -1,4 +1,4 @@
-import { Card, Flex, Heading, Input, Text } from "@chakra-ui/react"
+import { Card, Flex, Heading, Text } from "@chakra-ui/react"
 import { Button } from "@chakra-ui/react"
 import  { useState, useEffect } from "react";
 import { Box } from "@chakra-ui/react";
@@ -83,11 +83,9 @@ import { Toaster, toaster } from "../../components/ui/toaster";
 
 function Tools() {
   const [activeTool, setActiveTool] = useState<string | null>(null);
-  const [answers, setAnswers] = useState<Record<string, Record<string, string>>>(
-    {}
-  );
+  const [answers, setAnswers] = useState<Record<string, Record<string, string>>>({});
 
-  const screeningTools: Record<string, { title: string; questions: string[] }> = {
+  const screeningTools: Record<string, { title: string; questions: string[]; options: string[] }> = {
     "PHQ-9": {
       title: "Patient Health Questionnaire-9",
       questions: [
@@ -101,6 +99,7 @@ function Tools() {
         "Moving or speaking so slowly that other people could notice?",
         "Thoughts that you would be better off dead?",
       ],
+      options: ["Not at all", "Several days", "More than half the days", "Nearly every day"]
     },
     "GAD-7": {
       title: "Generalized Anxiety Disorder-7",
@@ -113,6 +112,7 @@ function Tools() {
         "Becoming easily annoyed or irritable?",
         "Feeling afraid as if something awful might happen?",
       ],
+      options: ["Not at all", "Several days", "More than half the days", "Nearly every day"]
     },
     "GAD-2": {
       title: "Generalized Anxiety Disorder-2",
@@ -120,6 +120,7 @@ function Tools() {
         "Feeling nervous, anxious, or on edge?",
         "Not being able to stop or control worrying?",
       ],
+      options: ["Not at all", "Several days", "More than half the days", "Nearly every day"]
     },
     GHQ: {
       title: "General Health Questionnaire",
@@ -130,26 +131,82 @@ function Tools() {
         "Have you recently felt you couldn’t overcome difficulties?",
         "Have you recently been feeling unhappy and depressed?",
       ],
+      options: ["Not at all", "No more than usual", "Rather more than usual", "Much more than usual"]
     },
   };
 
+  // Points for options
+  const toolPoints: Record<string, Record<string, number>> = {
+    "PHQ-9": { "Not at all": 0, "Several days": 1, "More than half the days": 2, "Nearly every day": 3 },
+    "GAD-7": { "Not at all": 0, "Several days": 1, "More than half the days": 2, "Nearly every day": 3 },
+    "GAD-2": { "Not at all": 0, "Several days": 1, "More than half the days": 2, "Nearly every day": 3 },
+    GHQ: { "Not at all": 0, "No more than usual": 0, "Rather more than usual": 1, "Much more than usual": 2 },
+  };
+
+  // Recommendations based on score
+  const recommendations: Record<string, { threshold: number; message: string }[]> = {
+    "PHQ-9": [
+      { threshold: 19, message: "Severe depression" },
+      { threshold: 14, message: "Moderately severe depression" },
+      { threshold: 9, message: "Moderate depression" },
+      { threshold: 4, message: "Mild depression" },
+      { threshold: 0, message: "Minimal depression" },
+    ],
+    "GAD-7": [
+      { threshold: 15, message: "Severe anxiety" },
+      { threshold: 10, message: "Moderate anxiety" },
+      { threshold: 5, message: "Mild anxiety" },
+      { threshold: 0, message: "Minimal anxiety" },
+    ],
+    "GAD-2": [
+      { threshold: 3, message: "Likely anxiety" },
+      { threshold: 2, message: "Possible anxiety" },
+      { threshold: 0, message: "Normal" },
+    ],
+    GHQ: [
+      { threshold: 7, message: "Severe distress" },
+      { threshold: 4, message: "Mild distress" },
+      { threshold: 0, message: "Normal" },
+    ],
+  };
+
   const handleChange = (tool: string, question: string, value: string) => {
-    setAnswers((prev) => ({
+    setAnswers(prev => ({
       ...prev,
       [tool]: { ...prev[tool], [question]: value },
     }));
   };
 
-  // Handle Send button click
-  const handleSend = (tool: string) => {
-    toaster.create({
-      description: `${tool} answers submitted successfully!`,
-      type: "success",
-    });
+  const allAnswersFilled = (tool: string) =>
+    screeningTools[tool].questions.every(q => answers[tool]?.[q]);
+
+  const calculateScore = (tool: string) =>
+    screeningTools[tool].questions.reduce((total, q) => total + (answers[tool]?.[q] ? toolPoints[tool][answers[tool][q]] : 0), 0);
+
+  const getRecommendation = (tool: string, score: number) => {
+    const recs = recommendations[tool];
+    for (let i = 0; i < recs.length; i++) {
+      if (score >= recs[i].threshold) return recs[i].message;
+    }
+    return "No recommendation";
   };
 
-  // Handle PDF generation
+  const handleSend = (tool: string) => {
+    if (!allAnswersFilled(tool)) {
+      toaster.create({ description: `Please answer all questions for ${tool}`, type: "warning" });
+      return;
+    }
+    const score = calculateScore(tool);
+    const rec = getRecommendation(tool, score);
+    toaster.create({ description: `${tool} submitted! Total Score: ${score}. Conclusion: ${rec}`, type: "success" });
+  };
+
   const handleGeneratePDF = (tool: string) => {
+    if (!allAnswersFilled(tool)) {
+      toaster.create({ description: `Please answer all questions for ${tool} before generating PDF`, type: "warning" });
+      return;
+    }
+
     const doc = new jsPDF();
     doc.setFontSize(16);
     doc.text(`${tool} - ${screeningTools[tool].title}`, 10, 10);
@@ -160,34 +217,36 @@ function Tools() {
       doc.setFontSize(12);
       doc.text(`${idx + 1}. ${q}`, 10, y);
       y += 7;
-      doc.text(`Answer: ${answer}`, 12, y);
+      doc.text(`Answer: ${answer} (Points: ${toolPoints[tool][answer]})`, 12, y);
       y += 10;
     });
 
+    const score = calculateScore(tool);
+    const rec = getRecommendation(tool, score);
+
+    doc.setFontSize(14);
+    doc.text(`Total Score: ${score}`, 10, y + 5);
+    doc.text(`Conclusion: ${rec}`, 10, y + 15);
+
     doc.save(`${tool}_answers.pdf`);
+
+    toaster.create({ description: `${tool} PDF generated! Total Score: ${score}. Conclusion: ${rec}`, type: "success" });
   };
 
   return (
     <Flex>
-      <Card.Root
-        size="lg"
-        width={{ md: "30vw" }}
-        mt={{ md: "1vw" }}
-        ml={{ md: "1vw" }}
-        letterSpacing={{ md: "-0.04vw" }}
-      >
+      <Card.Root size="lg" width={{ md: "30vw" }} mt={{ md: "1vw" }} ml={{ md: "1vw" }} letterSpacing={{ md: "-0.04vw" }}>
         <Card.Header>
           <Heading size="2xl">Screening Tools</Heading>
         </Card.Header>
         <Card.Body mt={{ md: "-1vw" }} color="fg.success">
           <Flex justifyContent={{ md: "flex-start" }} gap={{ md: "0.5vw" }}>
-            {["PHQ-9", "GAD-7", "GAD-2", "GHQ"].map((tool) => (
+            {["PHQ-9", "GAD-7", "GAD-2", "GHQ"].map(tool => (
               <Dialog.Root
                 key={tool}
                 open={activeTool === tool}
-                onOpenChange={(details) =>
-                  setActiveTool(details.open ? tool : null)
-                }
+                onOpenChange={(details) => setActiveTool(details.open ? tool : null)}
+                size={"lg"}
               >
                 <Dialog.Trigger asChild>
                   <Button width={{ md: "6vw" }}>{tool}</Button>
@@ -206,13 +265,17 @@ function Tools() {
                           {screeningTools[tool].questions.map((q, idx) => (
                             <Flex key={idx} direction="column" gap="0.5rem">
                               <label>{q}</label>
-                              <Input
-                                placeholder="Type your answer here"
-                                value={answers[tool]?.[q] || ""}
-                                onChange={(e) =>
-                                  handleChange(tool, q, e.target.value)
-                                }
-                              />
+                              <Flex gap="1rem">
+                                {screeningTools[tool].options.map(option => (
+                                  <Button
+                                    key={option}
+                                    variant={answers[tool]?.[q] === option ? "solid" : "outline"}
+                                    onClick={() => handleChange(tool, q, option)}
+                                  >
+                                    {option}
+                                  </Button>
+                                ))}
+                              </Flex>
                             </Flex>
                           ))}
                         </Flex>
@@ -222,15 +285,8 @@ function Tools() {
                         <Dialog.ActionTrigger asChild>
                           <Button variant="outline">Cancel</Button>
                         </Dialog.ActionTrigger>
-                        <Button colorScheme="green" onClick={() => handleSend(tool)}>
-                          Submit
-                        </Button>
-                        <Button
-                          colorScheme="blue"
-                          onClick={() => handleGeneratePDF(tool)}
-                        >
-                          Generate PDF
-                        </Button>
+                        <Button colorScheme="green" onClick={() => handleSend(tool)}>Submit</Button>
+                        <Button colorScheme="blue" onClick={() => handleGeneratePDF(tool)}>Generate PDF</Button>
                       </Dialog.Footer>
 
                       <Dialog.CloseTrigger asChild>
@@ -247,6 +303,7 @@ function Tools() {
     </Flex>
   );
 }
+
 
 
 
