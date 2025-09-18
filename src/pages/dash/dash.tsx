@@ -9,6 +9,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import "jspdf-autotable"
 import Vapi from '@vapi-ai/web';
+import { VscVr } from "react-icons/vsc";
 
 import {
   Area,
@@ -99,6 +100,7 @@ import {
   CloseButton,
 } from "@chakra-ui/react";
 import { Toaster, toaster } from "../../components/ui/toaster";
+import { useColorMode, useColorModeValue } from "../../components/ui/color-mode";
 
 
 function Tools({ chartData, setChartData }: { chartData: any[]; setChartData: any }) {
@@ -697,6 +699,8 @@ function Info() {
     setIsLoading(false);
   };
 
+  const { colorMode, toggleColorMode } = useColorMode();
+
   return (
     <Flex>
       <Card.Root
@@ -712,10 +716,15 @@ function Info() {
             <Text fontSize={"2vw"} fontWeight={{ md: "200" }}>
               Hello, Abhishekh.
             </Text>
-            <Avatar.Root colorPalette="blue">
+            <Flex gap={"1.2vw"}>
+              <VscVr size={"3vw"} onClick={() => toggleColorMode()} style={{cursor: "pointer"}}/>
+              <Avatar.Root colorPalette="blue">
               <Avatar.Fallback name="Random" />
               <Avatar.Image src="./image.png" />
             </Avatar.Root>
+            
+            </Flex>
+            
           </Flex>
 
           {/* AI Button */}
