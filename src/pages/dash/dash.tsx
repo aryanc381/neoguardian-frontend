@@ -646,7 +646,7 @@ function Analysis({ chartData }: { chartData: any[] }) {
       </Card.Header>
 
       <Card.Body>
-        <AreaChart width={800} height={300} data={displayedData}>
+        <AreaChart width={800} height={280} data={displayedData}>
           <CartesianGrid stroke="#ccc" vertical={false} />
           <XAxis dataKey="day" />
           <Tooltip />
