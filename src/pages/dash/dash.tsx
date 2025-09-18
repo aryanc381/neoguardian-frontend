@@ -100,7 +100,7 @@ import {
   CloseButton,
 } from "@chakra-ui/react";
 import { Toaster, toaster } from "../../components/ui/toaster";
-import { useColorMode, useColorModeValue } from "../../components/ui/color-mode";
+import { useColorMode } from "../../components/ui/color-mode";
 
 
 function Tools({ chartData, setChartData }: { chartData: any[]; setChartData: any }) {
@@ -699,7 +699,7 @@ function Info() {
     setIsLoading(false);
   };
 
-  const { colorMode, toggleColorMode } = useColorMode();
+  const { toggleColorMode } = useColorMode();
 
   return (
     <Flex>
