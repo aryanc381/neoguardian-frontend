@@ -640,7 +640,7 @@ function Analysis({ chartData }: { chartData: any[] }) {
     <Card.Root size="lg" width={{ md: "65vw" }} height={{ md: "29.3vw" }} mt={{ md: "1vw" }} ml={{ md: "1vw" }} letterSpacing={{ md: "-0.04vw" }}>
       <Card.Header textAlign={{ md: "left" }}>
         <Flex mt="2" gap="2">
-        <Heading size="2xl" mr={"1vw"}>EEG Analysis ({view})</Heading>
+        <Heading size="2xl" mr={"1vw"}>Analysis ({view})</Heading>
           <Button width={"6vw"} onClick={() => setView("daily")}>Daily</Button>
           <Button width={"6vw"} onClick={() => setView("weekly")}>Weekly</Button>
           <Button width={"6vw"} onClick={() => setView("monthly")}>Monthly</Button>
