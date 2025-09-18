@@ -528,11 +528,6 @@ function Analysis() {
   )
 }
 
-interface TranscriptMessage {
-  role: string;
-  text: string;
-}
-
 
 function Info() {
   const [vapi, setVapi] = useState<Vapi | null>(null);
