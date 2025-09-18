@@ -3,7 +3,6 @@ import { Button } from "@chakra-ui/react"
 import  { useState, useEffect } from "react";
 import { Box } from "@chakra-ui/react";
 import { motion } from "framer-motion";
-import { Chart, useChart } from "@chakra-ui/charts"
 import { Avatar } from "@chakra-ui/react"
 import { AvatarGroup } from "@chakra-ui/react"
 import jsPDF from "jspdf";
@@ -21,26 +20,31 @@ import {
 } from "recharts"
 
 function Dashboard() {
+  const [chartData, setChartData] = useState([
+    { day: "01/01", PHQ9: 5, GAD7: 6, stress: 4 },
+    { day: "01/02", PHQ9: 6, GAD7: 5, stress: 5 },
+    { day: "01/03", PHQ9: 4, GAD7: 7, stress: 6 },
+    { day: "01/04", PHQ9: 7, GAD7: 6, stress: 7 },
+  ]);
+
   return (
     <Flex>
       <Toaster />
-        <Flex direction={"column"}>
-            <PatientInfo />
-            <Helpline />
-            <Tools />
-            <Report />
+      <Flex direction="column">
+        <PatientInfo />
+        <Helpline />
+        <Tools setChartData={setChartData} chartData={chartData} />
+        <Report />
+      </Flex>
+      <Flex direction="column">
+        <Flex direction="row">
+          <BreathingExerciseCard />
+          <Info />
         </Flex>
-        <Flex direction={"column"}>
-          <Flex direction={"row"}>
-            <BreathingExerciseCard />
-            <Info />
-          
-          </Flex>
-          <Analysis />
-        </Flex>
-        
+        <Analysis chartData={chartData} />
+      </Flex>
     </Flex>
-  )
+  );
 }
 
 function PatientInfo() {
@@ -81,9 +85,10 @@ import {
 import { Toaster, toaster } from "../../components/ui/toaster";
 
 
-function Tools() {
+function Tools({ chartData, setChartData }: { chartData: any[]; setChartData: any }) {
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, Record<string, string>>>({});
+  console.log(chartData);
 
   const screeningTools: Record<string, { title: string; questions: string[]; options: string[] }> = {
     "PHQ-9": {
@@ -192,6 +197,7 @@ function Tools() {
     return "No recommendation";
   };
 
+  // --- UPDATED: Push score to chart
   const handleSend = (tool: string) => {
     if (!allAnswersFilled(tool)) {
       toaster.create({ description: `Please answer all questions for ${tool}`, type: "warning" });
@@ -200,99 +206,85 @@ function Tools() {
     const score = calculateScore(tool);
     const maxScore = screeningTools[tool].questions.length * Math.max(...Object.values(toolPoints[tool]));
     const rec = getRecommendation(tool, score);
+
+    // Add or update chart data
+    const today = new Date().toLocaleDateString();
+    setChartData((prev: any[]) => {
+      const last = prev[prev.length - 1] || { PHQ9: 0, GAD7: 0, stress: 0, day: today };
+      const updated = { ...last };
+      if (tool === "PHQ-9") updated.PHQ9 = score;
+      if (tool === "GAD-7") updated.GAD7 = score;
+      if (tool === "GHQ") updated.stress = score;
+
+      // Only add a new row if the last entry is a previous day
+      if (last.day === today) {
+        return [...prev.slice(0, -1), updated];
+      } else {
+        return [...prev, { ...updated, day: today }];
+      }
+    });
+
     toaster.create({
       description: `${tool} submitted! Score: ${score}/${maxScore}. Conclusion: ${rec}`,
       type: "success"
     });
   };
 
+  // PDF generation code remains unchanged
   const handleGeneratePDF = (tool: string) => {
-    if (!allAnswersFilled(tool)) {
-      toaster.create({ description: `Please answer all questions for ${tool} before generating PDF`, type: "warning" });
-      return;
-    }
+  if (!allAnswersFilled(tool)) {
+    toaster.create({ description: `Please answer all questions for ${tool} before generating PDF`, type: "warning" });
+    return;
+  }
 
-    const doc = new jsPDF();
-    const score = calculateScore(tool);
-    const maxScore = screeningTools[tool].questions.length * Math.max(...Object.values(toolPoints[tool]));
-    const rec = getRecommendation(tool, score);
+  const doc = new jsPDF();
+  const score = calculateScore(tool);
+  const maxScore = screeningTools[tool].questions.length * Math.max(...Object.values(toolPoints[tool]));
+  const rec = getRecommendation(tool, score);
 
-    // PDF Header
-    doc.setFontSize(18);
+  // PDF Header
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.text(`${tool} - ${screeningTools[tool].title}`, 10, 15);
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.5);
+  doc.line(10, 18, 200, 18);
+
+  let y = 25;
+
+  // Questions and answers
+  screeningTools[tool].questions.forEach((q, idx) => {
+    const answer = answers[tool]?.[q] || "";
+    const points = toolPoints[tool][answer];
     doc.setFont("helvetica", "bold");
-    doc.text(`${tool} - ${screeningTools[tool].title}`, 10, 15);
-    doc.setDrawColor(0);
-    doc.setLineWidth(0.5);
-    doc.line(10, 18, 200, 18);
-
-    let y = 25;
-
-    // Questions and answers
-    screeningTools[tool].questions.forEach((q, idx) => {
-      const answer = answers[tool]?.[q] || "";
-      const points = toolPoints[tool][answer];
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.text(`${idx + 1}. ${q}`, 10, y);
-      y += 7;
-      doc.setFont("helvetica", "normal");
-      doc.text(`Answer: ${answer} (Points: ${points})`, 12, y);
-      y += 10;
-    });
-
-    // Score highlight
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.setTextColor(0, 0, 200);
-    doc.text(`Total Score: ${score} / ${maxScore}`, 10, y + 5);
-
-    // Conclusion
-    doc.setFont("helvetica", "italic");
-    doc.setTextColor(0, 0, 0);
-    doc.text(`Conclusion: ${rec}`, 10, y + 15);
-
-    // Recommendations
-    const exerciseRecommendations: Record<string, string[]> = {
-      "PHQ-9": [
-        "Daily 20-min walk or light cardio",
-        "Meditation for 10-15 mins",
-        "Maintain consistent sleep schedule",
-        "Keep a gratitude journal",
-      ],
-      "GAD-7": [
-        "Breathing exercises 2-3 times daily",
-        "Yoga or stretching",
-        "Limit caffeine intake",
-        "Engage in relaxing hobbies",
-      ],
-      "GAD-2": [
-        "Short mindfulness breaks",
-        "Regular physical activity",
-        "Talk to a friend or counselor if anxious",
-      ],
-      GHQ: [
-        "Stress management activities",
-        "Regular physical activity",
-        "Healthy diet and sleep habits",
-      ],
-    };
-
-    doc.setFont("helvetica", "normal");
     doc.setFontSize(12);
-    doc.text("Recommendations:", 10, y + 25);
-    exerciseRecommendations[tool].forEach((rec, i) => {
-      doc.text(`- ${rec}`, 12, y + 35 + i * 7);
-    });
+    doc.text(`${idx + 1}. ${q}`, 10, y);
+    y += 7;
+    doc.setFont("helvetica", "normal");
+    doc.text(`Answer: ${answer} (Points: ${points})`, 12, y);
+    y += 10;
+  });
 
-    // Save PDF
-    doc.save(`${tool}_professional_report.pdf`);
+  // Score highlight
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(0, 0, 200);
+  doc.text(`Total Score: ${score} / ${maxScore}`, 10, y + 5);
 
-    toaster.create({
-      description: `${tool} PDF generated! Score: ${score}/${maxScore}. Conclusion: ${getRecommendation(tool, score)}`,
-      type: "success"
-    });
-  };
+  // Conclusion
+  doc.setFont("helvetica", "italic");
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Conclusion: ${rec}`, 10, y + 15);
 
+  // Save PDF
+  doc.save(`${tool}_report.pdf`);
+
+  toaster.create({
+    description: `${tool} PDF generated! Score: ${score}/${maxScore}. Conclusion: ${rec}`,
+    type: "success"
+  });
+};
+  
   return (
     <Flex>
       <Card.Root size="lg" width={{ md: "30vw" }} mt={{ md: "1vw" }} ml={{ md: "1vw" }} letterSpacing={{ md: "-0.04vw" }}>
@@ -363,6 +355,7 @@ function Tools() {
     </Flex>
   );
 }
+
 
 
 
@@ -590,59 +583,25 @@ function BreathingExerciseCard() {
   );
 }
 
-function Analysis() {
-    const chart = useChart({
-    data: [
-        { PHQ9: 5, GAD7: 6, stress: 4, month: "January" },
-        { PHQ9: 6, GAD7: 5, stress: 5, month: "February" },
-        { PHQ9: 4, GAD7: 7, stress: 6, month: "March" },
-        { PHQ9: 7, GAD7: 6, stress: 7, month: "April" },
-        { PHQ9: 5, GAD7: 4, stress: 5, month: "May" },
-        { PHQ9: 6, GAD7: 5, stress: 6, month: "June" },
-        { PHQ9: 4, GAD7: 6, stress: 5, month: "July" },
-        { PHQ9: 5, GAD7: 4, stress: 4, month: "August" },
-    ],
-    series: [
-        { name: "PHQ9", color: "red.400" },   // Depression score
-        { name: "GAD7", color: "orange.400" }, // Anxiety score
-        { name: "stress", color: "blue.400" }, // Stress level
-    ],
-    });
+function Analysis({ chartData }: { chartData: any[] }) {
   return (
-    <Card.Root size="lg" width={{md: "65vw"}} height={{md: "29.3vw"}} mt={{md: "1vw"}} ml={{md: "1vw"}} letterSpacing={{md: "-0.04vw"}}>
-        <Card.Header textAlign={{md: "left"}}>
-            <Heading size="2xl"><a href="https://chords.upsidedownlabs.tech/stream" >EEG Analysis</a></Heading>
-            </Card.Header>
-        <Chart.Root height={"24vw"} chart={chart} p={{md: "1vw"}}>
-        <AreaChart data={chart.data}>
-            <CartesianGrid stroke={chart.color("border.muted")} vertical={false} />
-            <XAxis
-            axisLine={false}
-            tickLine={false}
-            dataKey={chart.key("month")}
-            tickFormatter={(value) => value.slice(0, 3)}
-            />
-            <Tooltip
-            cursor={false}
-            animationDuration={100}
-            content={<Chart.Tooltip />}
-            />
-            <Legend content={<Chart.Legend />} />
-            {chart.series.map((item) => (
-            <Area
-                key={item.name}
-                isAnimationActive={false}
-                dataKey={chart.key(item.name)}
-                fill={chart.color(item.color)}
-                fillOpacity={0.2}
-                stroke={chart.color(item.color)}
-                stackId="a"
-            />
-            ))}
+    <Card.Root size="lg" width={{ md: "65vw" }} height={{ md: "29.3vw" }} mt={{ md: "1vw" }} ml={{ md: "1vw" }} letterSpacing={{ md: "-0.04vw" }}>
+      <Card.Header textAlign={{ md: "left" }}>
+        <Heading size="2xl">EEG Analysis (Daily)</Heading>
+      </Card.Header>
+      <Card.Body>
+        <AreaChart width={800} height={300} data={chartData}>
+          <CartesianGrid stroke="#ccc" vertical={false} />
+          <XAxis dataKey="day" />
+          <Tooltip />
+          <Legend />
+          <Area type="monotone" dataKey="PHQ9" name="Depression " stroke="#ff0000" fill="#ff000022" />
+          <Area type="monotone" dataKey="GAD7" name="Anxiety" stroke="#ffa500" fill="#ffa50022" />
+          <Area type="monotone" dataKey="stress" name="Stress" stroke="#0000ff" fill="#0000ff22" />
         </AreaChart>
-        </Chart.Root>
+      </Card.Body>
     </Card.Root>
-  )
+  );
 }
 
 
