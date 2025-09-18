@@ -1,6 +1,6 @@
 import { Card, Flex, Heading, Text } from "@chakra-ui/react"
 import { Button } from "@chakra-ui/react"
-import  { useState, useEffect } from "react";
+import  { useState, useEffect, useMemo } from "react";
 import { Box } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import { Avatar } from "@chakra-ui/react"
@@ -21,11 +21,27 @@ import {
 
 function Dashboard() {
   const [chartData, setChartData] = useState([
-    { day: "01/01", PHQ9: 5, GAD7: 6, stress: 4 },
-    { day: "01/02", PHQ9: 6, GAD7: 5, stress: 5 },
-    { day: "01/03", PHQ9: 4, GAD7: 7, stress: 6 },
-    { day: "01/04", PHQ9: 7, GAD7: 6, stress: 7 },
-  ]);
+  { day: "8/30/2025", PHQ9: 12, GAD7: 14, stress: 10 },
+  { day: "8/31/2025", PHQ9: 11, GAD7: 13, stress: 10 },
+  { day: "9/1/2025", PHQ9: 11, GAD7: 12, stress: 9 },
+  { day: "9/2/2025", PHQ9: 10, GAD7: 12, stress: 9 },
+  { day: "9/3/2025", PHQ9: 10, GAD7: 11, stress: 9 },
+  { day: "9/4/2025", PHQ9: 9, GAD7: 11, stress: 8 },
+  { day: "9/5/2025", PHQ9: 9, GAD7: 10, stress: 8 },
+  { day: "9/6/2025", PHQ9: 8, GAD7: 10, stress: 7 },
+  { day: "9/7/2025", PHQ9: 8, GAD7: 9, stress: 7 },
+  { day: "9/8/2025", PHQ9: 7, GAD7: 9, stress: 7 },
+  { day: "9/9/2025", PHQ9: 7, GAD7: 8, stress: 6 },
+  { day: "9/10/2025", PHQ9: 6, GAD7: 8, stress: 6 },
+  { day: "9/11/2025", PHQ9: 6, GAD7: 7, stress: 6 },
+  { day: "9/12/2025", PHQ9: 5, GAD7: 7, stress: 5 },
+  { day: "9/13/2025", PHQ9: 5, GAD7: 6, stress: 5 },
+  { day: "9/14/2025", PHQ9: 4, GAD7: 6, stress: 5 },
+  { day: "9/15/2025", PHQ9: 4, GAD7: 5, stress: 4 },
+  { day: "9/16/2025", PHQ9: 3, GAD7: 5, stress: 4 },
+  { day: "9/17/2025", PHQ9: 3, GAD7: 4, stress: 3 },
+  { day: "9/18/2025", PHQ9: 2, GAD7: 4, stress: 3 },
+]);
 
   return (
     <Flex>
@@ -584,18 +600,58 @@ function BreathingExerciseCard() {
 }
 
 function Analysis({ chartData }: { chartData: any[] }) {
+  const [view, setView] = useState<"daily" | "weekly" | "monthly">("daily");
+
+  // Aggregate data based on view
+  const displayedData = useMemo(() => {
+    if (view === "daily") return chartData;
+
+    const grouped: Record<string, { PHQ9: number; GAD7: number; stress: number; count: number }> = {};
+
+    chartData.forEach(({ day, PHQ9, GAD7, stress }) => {
+      let key = day;
+      if (view === "weekly") {
+        const d = new Date(day);
+        const week = Math.ceil(d.getDate() / 7);
+        key = `${d.getMonth() + 1}/W${week}`;
+      } else if (view === "monthly") {
+        const d = new Date(day);
+        key = `${d.getMonth() + 1}/${d.getFullYear()}`;
+      }
+
+      if (!grouped[key]) grouped[key] = { PHQ9: 0, GAD7: 0, stress: 0, count: 0 };
+      grouped[key].PHQ9 += PHQ9;
+      grouped[key].GAD7 += GAD7;
+      grouped[key].stress += stress;
+      grouped[key].count += 1;
+    });
+
+    return Object.entries(grouped).map(([day, val]) => ({
+      day,
+      PHQ9: +(val.PHQ9 / val.count).toFixed(1),
+      GAD7: +(val.GAD7 / val.count).toFixed(1),
+      stress: +(val.stress / val.count).toFixed(1),
+    }));
+  }, [chartData, view]);
+
   return (
     <Card.Root size="lg" width={{ md: "65vw" }} height={{ md: "29.3vw" }} mt={{ md: "1vw" }} ml={{ md: "1vw" }} letterSpacing={{ md: "-0.04vw" }}>
       <Card.Header textAlign={{ md: "left" }}>
-        <Heading size="2xl">EEG Analysis (Daily)</Heading>
+        <Flex mt="2" gap="2">
+        <Heading size="2xl" mr={"1vw"}>EEG Analysis ({view})</Heading>
+          <Button width={"6vw"} onClick={() => setView("daily")}>Daily</Button>
+          <Button width={"6vw"} onClick={() => setView("weekly")}>Weekly</Button>
+          <Button width={"6vw"} onClick={() => setView("monthly")}>Monthly</Button>
+        </Flex>
       </Card.Header>
+
       <Card.Body>
-        <AreaChart width={800} height={300} data={chartData}>
+        <AreaChart width={800} height={300} data={displayedData}>
           <CartesianGrid stroke="#ccc" vertical={false} />
           <XAxis dataKey="day" />
           <Tooltip />
           <Legend />
-          <Area type="monotone" dataKey="PHQ9" name="Depression " stroke="#ff0000" fill="#ff000022" />
+          <Area type="monotone" dataKey="PHQ9" name="Depression" stroke="#ff0000" fill="#ff000022" />
           <Area type="monotone" dataKey="GAD7" name="Anxiety" stroke="#ffa500" fill="#ffa50022" />
           <Area type="monotone" dataKey="stress" name="Stress" stroke="#0000ff" fill="#0000ff22" />
         </AreaChart>
