@@ -101,15 +101,15 @@ export function DoctorCard() {
     <Flex>
       <Card.Root
         size="lg"
-        width={{ md: "26vw" }} // same as Info card
+        width={{ md: "17vw" }} // same as Info card
         pt={{ md: "1vw" }}
         mt={{ md: "1vw" }}
         ml={{ md: "1vw" }}
         letterSpacing={{ md: "-0.04vw" }}
       >
-        <Card.Body color="fg.muted" mt={{ md: "-1vw" }} fontSize={{ md: "1.1vw" }}>
+        <Card.Body  mt={{ md: "-1vw" }} fontSize={{ md: "1.1vw" }}>
           <Flex justifyContent={{ md: "space-between" }} mb="1vw">
-            <Heading fontSize="2vw" fontWeight="300">
+            <Heading fontSize="2vw">
               Our Specialists
             </Heading>
           </Flex>
@@ -127,7 +127,7 @@ export function DoctorCard() {
                 <Dialog.Trigger asChild>
                   <Button
                     variant="solid"
-                    width="22vw"
+                    width="12vw"
                     p="1vw"
                     bg="gray.600"
                     _hover={{ bg: "gray.500" }}
@@ -256,8 +256,10 @@ function Dashboard() {
         <Flex direction="row">
           <Info />
           <DoctorCard />
+          <GameCard />
         </Flex>
         <Analysis chartData={chartData} />
+        
       </Flex>
     </Flex>
   );
@@ -573,7 +575,185 @@ function Tools({ chartData, setChartData }: { chartData: any[]; setChartData: an
   );
 }
 
+"use client";
 
+
+
+function GameCard() {
+  const [activeGame, setActiveGame] = useState<string | null>(null);
+
+  // game states
+  const [breathingStep, setBreathingStep] = useState<"Inhale" | "Exhale">("Inhale");
+  const [colorTarget, setColorTarget] = useState("Red");
+  const [colorMessage, setColorMessage] = useState("");
+  const [memoryCards, setMemoryCards] = useState<string[]>([]);
+  const [flipped, setFlipped] = useState<number[]>([]);
+  const [matched, setMatched] = useState<number[]>([]);
+
+  // breathing cycle effect
+  useEffect(() => {
+    if (activeGame === "Breathing Game") {
+      const interval = setInterval(() => {
+        setBreathingStep((prev) => (prev === "Inhale" ? "Exhale" : "Inhale"));
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [activeGame]);
+
+  // initialize memory cards
+  useEffect(() => {
+    if (activeGame === "Memory Flip") {
+      const base = ["🐶", "🐱", "🐶", "🐱"];
+      setMemoryCards(base.sort(() => Math.random() - 0.5));
+      setFlipped([]);
+      setMatched([]);
+    }
+  }, [activeGame]);
+
+  const colors = ["Red", "Green", "Blue"];
+
+  const handleColorClick = (color: string) => {
+    if (color === colorTarget) {
+      setColorMessage("✅ Correct!");
+      setColorTarget(colors[Math.floor(Math.random() * colors.length)]);
+    } else {
+      setColorMessage("❌ Try again!");
+    }
+  };
+
+  const handleFlip = (index: number) => {
+    if (flipped.length === 2 || flipped.includes(index) || matched.includes(index)) return;
+    const newFlipped = [...flipped, index];
+    setFlipped(newFlipped);
+    if (newFlipped.length === 2) {
+      const [i1, i2] = newFlipped;
+      if (memoryCards[i1] === memoryCards[i2]) {
+        setMatched([...matched, i1, i2]);
+      }
+      setTimeout(() => setFlipped([]), 800);
+    }
+  };
+
+  return (
+    <Flex>
+      <Card.Root
+        size="lg"
+        width={{ md: "19.5vw" }}
+        height={{ md: "19vw" }}
+        mt={{ md: "1vw" }}
+        ml={{ md: "1vw" }}
+        letterSpacing={{ md: "-0.04vw" }}
+      >
+        <Card.Header>
+          <Heading size="2xl">Calming Games</Heading>
+        </Card.Header>
+        <Card.Body ml={"-0.7vw"} width={"21vw"} mt={{ md: "-1.5vw" }} color="fg.success">
+          <Flex justifyContent={{ md: "flex-start" }} gap={{ md: "0.5vw" }} wrap="wrap">
+            {["Breathing Game", "Color Match", "Memory Flip"].map((game) => (
+              <Dialog.Root
+                key={game}
+                open={activeGame === game}
+                onOpenChange={(details) =>
+                  setActiveGame(details.open ? game : null)
+                }
+                size={"lg"}
+              >
+                <Dialog.Trigger asChild>
+                  <Button width={{ md: "8vw" }}>{game}</Button>
+                </Dialog.Trigger>
+
+                <Portal>
+                  <Dialog.Backdrop />
+                  <Dialog.Positioner>
+                    <Dialog.Content maxW="60vw" maxH="80vh">
+                      <Dialog.Header>
+                        <Dialog.Title>{game}</Dialog.Title>
+                      </Dialog.Header>
+
+                      <Dialog.Body>
+                        {/* Breathing Game */}
+                        {game === "Breathing Game" && (
+                          <Flex direction="column" align="center" gap="1rem">
+                            <Box
+                              w={breathingStep === "Inhale" ? "150px" : "80px"}
+                              h={breathingStep === "Inhale" ? "150px" : "80px"}
+                              borderRadius="50%"
+                              bg="teal.400"
+                              transition="all 3s ease-in-out"
+                            />
+                            <Text fontSize="2xl">{breathingStep}</Text>
+                          </Flex>
+                        )}
+
+                        {/* Color Match */}
+                        {game === "Color Match" && (
+                          <Flex direction="column" align="center" gap="1rem">
+                            <Text fontSize="xl">
+                              Select: <b>{colorTarget}</b>
+                            </Text>
+                            <Flex gap="1rem">
+                              {colors.map((c) => (
+                                <Button
+                                  key={c}
+                                  bg={c.toLowerCase()}
+                                  color="white"
+                                  onClick={() => handleColorClick(c)}
+                                >
+                                  {c}
+                                </Button>
+                              ))}
+                            </Flex>
+                            <Text>{colorMessage}</Text>
+                          </Flex>
+                        )}
+
+                        {/* Memory Flip */}
+                        {game === "Memory Flip" && (
+                          <Flex wrap="wrap" w="200px" mx="auto">
+                            {memoryCards.map((card, i) => (
+                              <Box
+                                key={i}
+                                w="80px"
+                                h="80px"
+                                m="5px"
+                                borderRadius="md"
+                                bg="gray.200"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                fontSize="2xl"
+                                cursor="pointer"
+                                onClick={() => handleFlip(i)}
+                              >
+                                {flipped.includes(i) || matched.includes(i)
+                                  ? card
+                                  : "❓"}
+                              </Box>
+                            ))}
+                          </Flex>
+                        )}
+                      </Dialog.Body>
+
+                      <Dialog.Footer>
+                        <Dialog.ActionTrigger asChild>
+                          <Button variant="outline">Close</Button>
+                        </Dialog.ActionTrigger>
+                      </Dialog.Footer>
+
+                      <Dialog.CloseTrigger asChild>
+                        <CloseButton size="sm" />
+                      </Dialog.CloseTrigger>
+                    </Dialog.Content>
+                  </Dialog.Positioner>
+                </Portal>
+              </Dialog.Root>
+            ))}
+          </Flex>
+        </Card.Body>
+      </Card.Root>
+    </Flex>
+  );
+}
 
 
 
@@ -836,7 +1016,7 @@ function Analysis({ chartData }: { chartData: any[] }) {
   }, [chartData, view]);
 
   return (
-    <Card.Root size="lg" width={{ md: "65vw" }} height={{ md: "29.3vw" }} mt={{ md: "1vw" }} ml={{ md: "1vw" }} letterSpacing={{ md: "-0.04vw" }}>
+    <Card.Root size="lg" width={{ md: "44.1vw" }} height={{ md: "26.3vw" }} mt={{ md: "1vw" }} ml={{ md: "1vw" }} letterSpacing={{ md: "-0.04vw" }}>
       <Card.Header textAlign={{ md: "left" }}>
         <Flex mt="2" gap="2">
         <Heading size="2xl" mr={"1vw"}>Analysis ({view})</Heading>
@@ -847,7 +1027,7 @@ function Analysis({ chartData }: { chartData: any[] }) {
       </Card.Header>
 
       <Card.Body>
-        <AreaChart width={800} height={280} data={displayedData}>
+        <AreaChart width={550} height={240} data={displayedData}>
           <CartesianGrid stroke="#ccc" vertical={false} />
           <XAxis dataKey="day" />
           <Tooltip />
