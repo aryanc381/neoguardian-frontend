@@ -256,11 +256,15 @@ function Dashboard() {
         <Flex direction="row">
           <Info />
           <DoctorCard />
-          <GameCard />
+          
         </Flex>
         <Analysis chartData={chartData} />
+      </Flex>
+      <Flex direction={"column"}>
+        <GameCard />
         
       </Flex>
+      
     </Flex>
   );
 }
@@ -582,84 +586,126 @@ function Tools({ chartData, setChartData }: { chartData: any[]; setChartData: an
 function GameCard() {
   const [activeGame, setActiveGame] = useState<string | null>(null);
 
-  // game states
-  const [breathingStep, setBreathingStep] = useState<"Inhale" | "Exhale">("Inhale");
+  // States for breathing & muscle relaxation etc
+  const [breathingStep, setBreathingStep] = useState<
+    "Inhale" | "Hold" | "Exhale" | "Hold2"
+  >("Inhale");
   const [colorTarget, setColorTarget] = useState("Red");
   const [colorMessage, setColorMessage] = useState("");
   const [memoryCards, setMemoryCards] = useState<string[]>([]);
   const [flipped, setFlipped] = useState<number[]>([]);
   const [matched, setMatched] = useState<number[]>([]);
 
-  // breathing cycle effect
+  const [muscleStep, setMuscleStep] = useState<number>(0);
+  const muscleInstructions = [
+    "Wrinkle your forehead, then release.",
+    "Tighten shoulders, hold, then relax.",
+    "Clench fists, hold, then relax.",
+    "Press legs into ground, hold, then relax.",
+  ];
+
+  // For breathing cycle
   useEffect(() => {
-    if (activeGame === "Breathing Game") {
+    if (activeGame === "Deep Breathing") {
+      const sequence: any = {
+        Inhale: "Hold",
+        Hold: "Exhale",
+        Exhale: "Hold2",
+        Hold2: "Inhale",
+      };
       const interval = setInterval(() => {
-        setBreathingStep((prev) => (prev === "Inhale" ? "Exhale" : "Inhale"));
+        setBreathingStep((prev) => sequence[prev]);
       }, 4000);
       return () => clearInterval(interval);
     }
   }, [activeGame]);
 
-  // initialize memory cards
+  // Memory Flip initialization
   useEffect(() => {
     if (activeGame === "Memory Flip") {
-      const base = ["🐶", "🐱", "🐶", "🐱"];
+      const base = ["🐶", "🐱", "🐶", "🐱", "🐸", "🐸", "🐵", "🐵", "🦁", "🦁", "🐬", "🐬"];
       setMemoryCards(base.sort(() => Math.random() - 0.5));
       setFlipped([]);
       setMatched([]);
     }
   }, [activeGame]);
 
-  const colors = ["Red", "Green", "Blue"];
-
+  const colors = ["Red", "Green", "Blue", "Yellow"];
   const handleColorClick = (color: string) => {
     if (color === colorTarget) {
       setColorMessage("✅ Correct!");
-      setColorTarget(colors[Math.floor(Math.random() * colors.length)]);
     } else {
       setColorMessage("❌ Try again!");
     }
+    setColorTarget(colors[Math.floor(Math.random() * colors.length)]);
   };
 
   const handleFlip = (index: number) => {
-    if (flipped.length === 2 || flipped.includes(index) || matched.includes(index)) return;
+    if (
+      flipped.length === 2 ||
+      flipped.includes(index) ||
+      matched.includes(index)
+    )
+      return;
     const newFlipped = [...flipped, index];
     setFlipped(newFlipped);
     if (newFlipped.length === 2) {
       const [i1, i2] = newFlipped;
       if (memoryCards[i1] === memoryCards[i2]) {
-        setMatched([...matched, i1, i2]);
+        setMatched((prev) => [...prev, i1, i2]);
       }
       setTimeout(() => setFlipped([]), 800);
     }
   };
 
+  const exercises = [
+    "Deep Breathing",
+    "Guided Imagery",
+    "MR",
+    "Yoga",
+    "Mindfulness",
+    "Loving-Kindness",
+    "BehavioralT",
+    "CognitiveT",
+    "Color Match",
+    "Memory Flip",
+  ];
+
   return (
     <Flex>
       <Card.Root
         size="lg"
-        width={{ md: "19.5vw" }}
-        height={{ md: "19vw" }}
+        width={{ md: "22vw" }}
+        height={{ md: "23.5vw" }}
         mt={{ md: "1vw" }}
         ml={{ md: "1vw" }}
         letterSpacing={{ md: "-0.04vw" }}
       >
         <Card.Header>
-          <Heading size="2xl">Calming Games</Heading>
+          <Heading size="2xl">Interactive Exercises</Heading>
         </Card.Header>
-        <Card.Body ml={"-0.7vw"} width={"21vw"} mt={{ md: "-1.5vw" }} color="fg.success">
-          <Flex justifyContent={{ md: "flex-start" }} gap={{ md: "0.5vw" }} wrap="wrap">
-            {["Breathing Game", "Color Match", "Memory Flip"].map((game) => (
+        <Card.Body
+          ml={{ md: "-0.7vw" }}
+          width={{ md: "23vw" }}
+          mt={{ md: "-1.5vw" }}
+          color="fg.success"
+        >
+          <Flex
+            justifyContent={{ md: "flex-start" }}
+            gap={{ md: "0.5vw" }}
+            wrap="wrap"
+          >
+            {exercises.map((ex) => (
               <Dialog.Root
-                key={game}
-                open={activeGame === game}
+                key={ex}
+                open={activeGame === ex}
                 onOpenChange={(details) =>
-                  setActiveGame(details.open ? game : null)
+                  setActiveGame(details.open ? ex : null)
                 }
                 size={"lg"}
               >
                 <Dialog.Trigger asChild>
-                  <Button width={{ md: "8vw" }}>{game}</Button>
+                  <Button width={{ md: "8vw" }}>{ex}</Button>
                 </Dialog.Trigger>
 
                 <Portal>
@@ -667,16 +713,20 @@ function GameCard() {
                   <Dialog.Positioner>
                     <Dialog.Content maxW="60vw" maxH="80vh">
                       <Dialog.Header>
-                        <Dialog.Title>{game}</Dialog.Title>
+                        <Dialog.Title>{ex}</Dialog.Title>
                       </Dialog.Header>
 
                       <Dialog.Body>
-                        {/* Breathing Game */}
-                        {game === "Breathing Game" && (
+                        {/* Deep Breathing */}
+                        {ex === "Deep Breathing" && (
                           <Flex direction="column" align="center" gap="1rem">
                             <Box
-                              w={breathingStep === "Inhale" ? "150px" : "80px"}
-                              h={breathingStep === "Inhale" ? "150px" : "80px"}
+                              w={
+                                breathingStep === "Inhale" ? "150px" : "80px"
+                              }
+                              h={
+                                breathingStep === "Inhale" ? "150px" : "80px"
+                              }
                               borderRadius="50%"
                               bg="teal.400"
                               transition="all 3s ease-in-out"
@@ -685,12 +735,96 @@ function GameCard() {
                           </Flex>
                         )}
 
-                        {/* Color Match */}
-                        {game === "Color Match" && (
-                          <Flex direction="column" align="center" gap="1rem">
-                            <Text fontSize="xl">
-                              Select: <b>{colorTarget}</b>
+                        {/* Guided Imagery */}
+                        {ex === "Guided Imagery" && (
+                          <Box>
+                            <Text mb="1rem">
+                              Imagine you are in a serene forest. The sunlight filters
+                              through trees. You hear birds singing. You breathe in
+                              fresh air. You sit beside a calm stream. When you open
+                              your eyes, notice how relaxed you feel.
                             </Text>
+                            <Text fontStyle="italic">(Pause, take a deep breath…)</Text>
+                          </Box>
+                        )}
+
+                        {/* Progressive Muscle Relaxation */}
+                        {ex === "Progressive Muscle Relaxation" && (
+                          <Flex direction="column" align="center" gap="1rem">
+                            <Text>
+                              {muscleInstructions[muscleStep]}
+                            </Text>
+                            <Button
+                              onClick={() =>
+                                setMuscleStep(
+                                  (prev) =>
+                                    (prev + 1) % muscleInstructions.length
+                                )
+                              }
+                            >
+                              Next Step
+                            </Button>
+                          </Flex>
+                        )}
+
+                        {/* Stretching & Gentle Yoga */}
+                        {ex === "Stretching & Gentle Yoga" && (
+                          <Box>
+                            <Text>
+                              Stretch your arms overhead. Lean to one side. Reach
+                              down to toes. Gentle neck rolls. Repeat each stretch
+                              slowly. Hold and breathe.
+                            </Text>
+                          </Box>
+                        )}
+
+                        {/* Mindfulness Meditation */}
+                        {ex === "Mindfulness Meditation" && (
+                          <Box>
+                            <Text>
+                              Sit quietly. Focus on your breath. Notice thoughts when
+                              they arise, then gently let them go. Return to breath.
+                            </Text>
+                          </Box>
+                        )}
+
+                        {/* Loving-Kindness Meditation */}
+                        {ex === "Loving-Kindness Meditation" && (
+                          <Box>
+                            <Text>
+                              Silently repeat repetitive phrases of goodwill: “May I
+                              be happy. May I be healthy. May I be safe. May I live with
+                              ease.” Then extend these wishes to others.
+                            </Text>
+                          </Box>
+                        )}
+
+                        {/* Cognitive Behavioral Therapy */}
+                        {ex === "Cognitive Behavioral Therapy" && (
+                          <Box>
+                            <Text>
+                              Notice negative thoughts. Ask: Are they true? What’s a
+                              more balanced thought? Replace distorted thinking with
+                              kinder perspective.
+                            </Text>
+                          </Box>
+                        )}
+
+                        {/* Mindfulness-Based Cognitive Therapy */}
+                        {ex === "Mindfulness-Based Cognitive Therapy" && (
+                          <Box>
+                            <Text>
+                              Integrates mindfulness meditation with CBT to help you
+                              observe thoughts without judgment and break cycles of
+                              rumination.
+                            </Text>
+                          </Box>
+                        )}
+
+                        {/* Color Match */}
+                        {ex === "Color Match" && (
+                          <Flex direction="column" align="center" gap="1rem">
+                            <Text>Select color: <b>{colorTarget}</b></Text>
                             <Flex gap="1rem">
                               {colors.map((c) => (
                                 <Button
@@ -708,15 +842,13 @@ function GameCard() {
                         )}
 
                         {/* Memory Flip */}
-                        {game === "Memory Flip" && (
-                          <Flex wrap="wrap" w="200px" mx="auto">
+                        {ex === "Memory Flip" && (
+                          <Flex wrap="wrap" w="250px" mx="auto">
                             {memoryCards.map((card, i) => (
                               <Box
                                 key={i}
-                                w="80px"
-                                h="80px"
-                                m="5px"
-                                borderRadius="md"
+                                w="70px"
+                                h="70px"
                                 bg="gray.200"
                                 display="flex"
                                 alignItems="center"
