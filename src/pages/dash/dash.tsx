@@ -1,6 +1,6 @@
-import { Card, Flex, Heading, Text } from "@chakra-ui/react"
+import { Card, Flex, Heading, Link, Text } from "@chakra-ui/react"
 import { Button } from "@chakra-ui/react"
-import  { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Box } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import { Avatar } from "@chakra-ui/react"
@@ -10,6 +10,7 @@ import autoTable from "jspdf-autotable";
 import "jspdf-autotable"
 import Vapi from '@vapi-ai/web';
 import { VscVr } from "react-icons/vsc";
+// import {useCycle } from "framer-motion";
 
 import {
   Area,
@@ -20,7 +21,204 @@ import {
   XAxis,
 } from "recharts";
 
+// function BreatheCircle() {
+//   const [scale, cycleScale] = useCycle(1, 1.5); // inhale/exhale
+//   const [isBreathing, setIsBreathing] = useState(false);
+
+//   useEffect(() => {
+//     if (!isBreathing) return;
+
+//     const interval = setInterval(() => cycleScale(), 4000);
+//     return () => clearInterval(interval);
+//   }, [isBreathing, cycleScale]);
+
+//   return (
+//     <div style={{ textAlign: "center", marginTop: "2rem" }}>
+//       <motion.div
+//         style={{
+//           width: 200,
+//           height: 200,
+//           borderRadius: "50%",
+//           backgroundColor: "#4A90E2",
+//           margin: "auto",
+//         }}
+//         animate={{ scale }}
+//         transition={{ duration: 4, ease: "easeInOut" }}
+//       />
+//       <button
+//         onClick={() => setIsBreathing(!isBreathing)}
+//         style={{
+//           marginTop: "1rem",
+//           padding: "0.5rem 1rem",
+//           fontSize: "1rem",
+//           cursor: "pointer",
+//         }}
+//       >
+//         Breathe In
+//       </button>
+//     </div>
+//   );
+// }
+
+type Doctor = {
+  name: string;
+  specialty: string;
+  description: string;
+  slots: string[];
+  meetLink: string;
+};
+
+const doctors: Doctor[] = [
+  {
+    name: "Dr. Neha Sharma",
+    specialty: "Clinical Psychologist",
+    description: "10+ years experience in CBT, Anxiety & Stress Management.",
+    slots: ["10:00 AM", "11:30 AM", "2:00 PM", "4:00 PM", "6:00 PM"],
+    meetLink: "https://meet.google.com/neha-sharma",
+  },
+  {
+    name: "Dr. Rajesh Mehta",
+    specialty: "Child & Adolescent Psychologist",
+    description: "Expert in ADHD, behavioral issues, and family therapy.",
+    slots: ["9:30 AM", "12:00 PM", "3:30 PM", "5:00 PM"],
+    meetLink: "https://meet.google.com/rajesh-mehta",
+  },
+  {
+    name: "Dr. Ananya Kapoor",
+    specialty: "Depression & Trauma Specialist",
+    description: "Specialist in trauma recovery, grief counseling, and mood disorders.",
+    slots: ["10:15 AM", "1:00 PM", "4:15 PM", "6:30 PM"],
+    meetLink: "https://meet.google.com/ananya-kapoor",
+  },
+];
+
+export function DoctorCard() {
+  const [activeDoctor, setActiveDoctor] = useState<string | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  
+
+  return (
+    <Flex>
+      <Card.Root
+        size="lg"
+        width={{ md: "26vw" }} // same as Info card
+        pt={{ md: "1vw" }}
+        mt={{ md: "1vw" }}
+        ml={{ md: "1vw" }}
+        letterSpacing={{ md: "-0.04vw" }}
+      >
+        <Card.Body color="fg.muted" mt={{ md: "-1vw" }} fontSize={{ md: "1.1vw" }}>
+          <Flex justifyContent={{ md: "space-between" }} mb="1vw">
+            <Heading fontSize="2vw" fontWeight="300">
+              Our Specialists
+            </Heading>
+          </Flex>
+
+          <Flex direction="column" gap="1vw">
+            {doctors.map((doc) => (
+              <Dialog.Root
+                key={doc.name}
+                open={activeDoctor === doc.name}
+                onOpenChange={(details) =>
+                  setActiveDoctor(details.open ? doc.name : null)
+                }
+                size="lg"
+              >
+                <Dialog.Trigger asChild>
+                  <Button
+                    variant="solid"
+                    width="22vw"
+                    p="1vw"
+                    bg="gray.600"
+                    _hover={{ bg: "gray.500" }}
+                    justifyContent="flex-start"
+                  >
+                    <Text fontSize="1.1vw" color="white" fontWeight="300">
+                      {doc.name}
+                    </Text>
+                  </Button>
+                </Dialog.Trigger>
+
+                <Portal>
+                  <Dialog.Backdrop />
+                  <Dialog.Positioner>
+                    <Dialog.Content borderRadius="2xl" p="2vw">
+                      <Dialog.Header>
+                        <Dialog.Title fontSize="1.4vw">
+                          {doc.name} – {doc.specialty}
+                        </Dialog.Title>
+                      </Dialog.Header>
+
+                      <Dialog.Body>
+                        <Text color="gray.600" mb="1.2vw" fontSize="1vw">
+                          {doc.description}
+                        </Text>
+
+                        <Heading size="sm" mb="0.8vw" fontSize="1vw">
+                          Available Slots
+                        </Heading>
+                        <Flex wrap="wrap" gap="0.6vw">
+                          {doc.slots.map((slot) => (
+                            <Button
+                              key={slot}
+                              size="sm"
+                              variant={selectedSlot === slot ? "solid" : "outline"}
+                              colorScheme={selectedSlot === slot ? "teal" : "gray"}
+                              onClick={() => setSelectedSlot(slot)}
+                              fontSize="0.9vw"
+                            >
+                              {slot}
+                            </Button>
+                          ))}
+                        </Flex>
+                      </Dialog.Body>
+
+                      <Dialog.Footer mt="1.2vw">
+                        <Dialog.ActionTrigger asChild>
+                          <Button variant="outline" fontSize="0.9vw">
+                            Cancel
+                          </Button>
+                        </Dialog.ActionTrigger>
+                        <Button
+                          colorScheme="teal"
+                          fontSize="0.9vw"
+                          onClick={() => {
+                            toaster.create({
+                              title: "Appointment Confirmed",
+                              description: `Your session with ${doc.name} at ${selectedSlot} is booked.`,
+                              type: "success",
+                              duration: 3000,
+                            });
+                            setSelectedSlot(null);
+                            setActiveDoctor(null);
+                          }}
+                        >
+                          Book
+                        </Button>
+                        <Button
+                          colorScheme="blue"
+                          ml="0.8vw"
+                          fontSize="0.9vw"
+                        ><Link href={doc.meetLink} color={"black"}>Google Meet</Link>
+                        </Button>
+                      </Dialog.Footer>
+
+                      <Dialog.CloseTrigger asChild>
+                        <CloseButton size="sm" />
+                      </Dialog.CloseTrigger>
+                    </Dialog.Content>
+                  </Dialog.Positioner>
+                </Portal>
+              </Dialog.Root>
+            ))}
+          </Flex>
+        </Card.Body>
+      </Card.Root>
+    </Flex>
+  );
+}
 function Dashboard() {
+  
   const [chartData, setChartData] = useState([
   { day: "8/30/2025", PHQ9: 12, GAD7: 14, stress: 10 },
   { day: "8/31/2025", PHQ9: 11, GAD7: 13, stress: 10 },
@@ -54,9 +252,10 @@ function Dashboard() {
         <Report />
       </Flex>
       <Flex direction="column">
+    
         <Flex direction="row">
-          <BreathingExerciseCard />
           <Info />
+          <DoctorCard />
         </Flex>
         <Analysis chartData={chartData} />
       </Flex>
@@ -537,69 +736,69 @@ function Report() {
 }
 
 
-const MotionBox = motion(Box);
+// const MotionBox = motion(Box);
 
 
-function BreathingExerciseCard() {
-  const [isExercising, setIsExercising] = useState(false);
-  const [fill, setFill] = useState(0);
-  const [direction, setDirection] = useState(1); // 1 = fill, -1 = empty
+// function BreathingExerciseCard() {
+//   const [isExercising, setIsExercising] = useState(false);
+//   const [fill, setFill] = useState(0);
+//   const [direction, setDirection] = useState(1); // 1 = fill, -1 = empty
 
-  useEffect(() => {
-    let interval: number;
-    if (isExercising) {
-      interval = window.setInterval(() => {
-        setFill((prev) => {
-          let next = prev + direction * 2; // 2% per 100ms → 5s full cycle
-          if (next >= 100) {
-            next = 100;
-            setDirection(-1);
-          } else if (next <= 0) {
-            next = 0;
-            setDirection(1);
-          }
-          return next;
-        });
-      }, 100);
-    }
-    return () => clearInterval(interval);
-  }, [isExercising, direction]);
+//   useEffect(() => {
+//     let interval: number;
+//     if (isExercising) {
+//       interval = window.setInterval(() => {
+//         setFill((prev) => {
+//           let next = prev + direction * 2; // 2% per 100ms → 5s full cycle
+//           if (next >= 100) {
+//             next = 100;
+//             setDirection(-1);
+//           } else if (next <= 0) {
+//             next = 0;
+//             setDirection(1);
+//           }
+//           return next;
+//         });
+//       }, 100);
+//     }
+//     return () => clearInterval(interval);
+//   }, [isExercising, direction]);
 
-  return (
-    <Card.Root
-      size="lg"
-      width={{ md: "33vw" }}
-      mt={{ md: "1vw" }}
-      ml={{ md: "1vw" }}
-      letterSpacing={{ md: "-0.04vw" }}
-    >
-      <Card.Header>
-        <Heading size="2xl">Breathing Exercise</Heading>
-      </Card.Header>
-      <Card.Body color="fg.muted" mt={{ md: "-1vw" }} fontSize={{ md: "1.2vw" }}>
-        <Box mb={4} textAlign="center" fontWeight="900">
-          {isExercising ? (direction === 1 ? "Inhale" : "Exhale") : "Press Start"}
-        </Box>
-        <Box width="100%" height="20px" bg="gray.300" borderRadius="md" overflow="hidden">
-          <MotionBox
-            width={`${fill}%`}
-            height="100%"
-            bg={direction === 1 ? "blue.400" : "green.400"}
-            transition={{ duration: 0.1, ease: "linear" }}
-          />
-        </Box>
-        <Button
-          mt={4}
-          colorScheme={isExercising ? "red" : "blue"}
-          w="full"
-          onClick={() => setIsExercising(!isExercising)}
-        >
-          {isExercising ? "Stop Exercise" : "Start Exercise"}
-        </Button>
-      </Card.Body>
-    </Card.Root>
-  );
-}
+//   return (
+//     <Card.Root
+//       size="lg"
+//       width={{ md: "33vw" }}
+//       mt={{ md: "1vw" }}
+//       ml={{ md: "1vw" }}
+//       letterSpacing={{ md: "-0.04vw" }}
+//     >
+//       <Card.Header>
+//         <Heading size="2xl">Breathing Exercise</Heading>
+//       </Card.Header>
+//       <Card.Body color="fg.muted" mt={{ md: "-1vw" }} fontSize={{ md: "1.2vw" }}>
+//         <Box mb={4} textAlign="center" fontWeight="900">
+//           {isExercising ? (direction === 1 ? "Inhale" : "Exhale") : "Press Start"}
+//         </Box>
+//         <Box width="100%" height="20px" bg="gray.300" borderRadius="md" overflow="hidden">
+//           <MotionBox
+//             width={`${fill}%`}
+//             height="100%"
+//             bg={direction === 1 ? "blue.400" : "green.400"}
+//             transition={{ duration: 0.1, ease: "linear" }}
+//           />
+//         </Box>
+//         <Button
+//           mt={4}
+//           colorScheme={isExercising ? "red" : "blue"}
+//           w="full"
+//           onClick={() => setIsExercising(!isExercising)}
+//         >
+//           {isExercising ? "Stop Exercise" : "Start Exercise"}
+//         </Button>
+//       </Card.Body>
+//     </Card.Root>
+//   );
+// }
 
 function Analysis({ chartData }: { chartData: any[] }) {
   const [view, setView] = useState<"daily" | "weekly" | "monthly">("daily");
@@ -705,7 +904,7 @@ function Info() {
     <Flex>
       <Card.Root
         size="lg"
-        width={{ md: "31vw" }}
+        width={{ md: "26vw" }}
         pt={{ md: "1vw" }}
         mt={{ md: "1vw" }}
         ml={{ md: "1vw" }}
@@ -731,7 +930,7 @@ function Info() {
           <Flex>
             <Button
               variant="solid"
-              width="25vw"
+              width="22vw"
               p="3vw"
               mt="3vw"
               bg={
@@ -750,10 +949,10 @@ function Info() {
               }}
               onClick={isConnected ? endCall : startCall}
             >
-              <Flex justifyContent="space-between" gap="3vw" width="100%">
+              <Flex justifyContent="space-between" gap="1vw" width="100%">
                 <Text mt="0.9vw" fontSize="1.2vw" color="white" fontWeight="300">
                   {isConnected
-                    ? "Talking to Adarsh"
+                    ? "Hello..."
                     : isLoading
                     ? "Loading AI..."
                     : "Talk with AI"}
