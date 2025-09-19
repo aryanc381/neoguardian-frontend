@@ -223,7 +223,8 @@ function Dashboard() {
       </Flex>
       <Flex direction={"column"}>
         <GameCard />
-        
+        <ProgressCard />
+    
       </Flex>
       
     </Flex>
@@ -540,8 +541,51 @@ function Tools({ chartData, setChartData }: { chartData: any[]; setChartData: an
   );
 }
 
-"use client";
+function ProgressCard() {
+  return (
+    <Flex>
+      <Card.Root
+        size="lg"
+        width={{ md: "22vw" }}
+        height={{ md: "21vw" }}
+        mt={{ md: "1vw" }}
+        ml={{ md: "1vw" }}
+        letterSpacing={{ md: "-0.04vw" }}
+      >
+        <Card.Header>
+          <Heading size="2xl">Progress Dashboard</Heading>
+          <Text fontSize="sm" color="gray.500" letterSpacing={"0vw"}>
+            Track your mindfulness journey and celebrate your progress
+          </Text>
+        </Card.Header>
 
+        <Card.Body
+          justifyContent="flex-start"
+          alignItems="flex-start"
+          gap="0.6rem"
+          fontSize="md"
+          color="fg.success"
+        >
+          {/* Quick Stats */}
+          <Flex direction="column" gap="0.4rem">
+            <Text>
+              Minutes Practiced: <b>162</b> 
+            </Text>
+            <Text>
+            Sessions Completed: <b>10</b> 
+            </Text>
+            <Text>
+              Day Streak: <b>1</b> 
+            </Text>
+            <Text>
+             Average Rating: <b>3.5</b>
+            </Text>
+          </Flex>
+        </Card.Body>
+      </Card.Root>
+    </Flex>
+  );
+}
 
 
 function GameCard() {
@@ -584,7 +628,11 @@ function GameCard() {
   // Memory Flip initialization
   useEffect(() => {
     if (activeGame === "Memory Flip") {
-      const base = ["🐶", "🐱", "🐶", "🐱", "🐸", "🐸", "🐵", "🐵", "🦁", "🦁", "🐬", "🐬"];
+      const base = [
+        "🐶", "🐱", "🐶", "🐱",
+        "🐸", "🐸", "🐵", "🐵",
+        "🦁", "🦁", "🐬", "🐬"
+      ];
       setMemoryCards(base.sort(() => Math.random() - 0.5));
       setFlipped([]);
       setMatched([]);
@@ -632,6 +680,16 @@ function GameCard() {
     "CognitiveT",
   ];
 
+  const externalExercises = [
+    "Guided Imagery",
+    "MR",
+    "Yoga",
+    "Mindfulness",
+    "Loving-Kindness",
+    "BehavioralT",
+    "CognitiveT",
+  ];
+
   return (
     <Flex>
       <Card.Root
@@ -646,7 +704,9 @@ function GameCard() {
           <Heading size="2xl">Interactive Exercises</Heading>
         </Card.Header>
         <Card.Body
-          ml={{ md: "-0.7vw" }}
+          justifyContent={"center"}
+          alignItems={"center"}
+          ml={{ md: "0vw" }}
           width={{ md: "23vw" }}
           mt={{ md: "-1.5vw" }}
           color="fg.success"
@@ -656,198 +716,123 @@ function GameCard() {
             gap={{ md: "0.5vw" }}
             wrap="wrap"
           >
-            {exercises.map((ex) => (
-              <Dialog.Root
-                key={ex}
-                open={activeGame === ex}
-                onOpenChange={(details) =>
-                  setActiveGame(details.open ? ex : null)
-                }
-                size={"lg"}
-              >
-                <Dialog.Trigger asChild>
-                  <Button width={{ md: "8vw" }}>{ex}</Button>
-                </Dialog.Trigger>
+            {exercises.map((ex) => {
+              if (externalExercises.includes(ex)) {
+                return (
+                  <a
+                    key={ex}
+                    href="https://neuroguardian.lovable.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ textDecoration: "none" }}
+                  >
+                    <Button width={{ md: "8vw" }}>{ex}</Button>
+                  </a>
+                );
+              }
 
-                <Portal>
-                  <Dialog.Backdrop />
-                  <Dialog.Positioner>
-                    <Dialog.Content maxW="60vw" maxH="80vh">
-                      <Dialog.Header>
-                        <Dialog.Title>{ex}</Dialog.Title>
-                      </Dialog.Header>
+              return (
+                <Dialog.Root
+                  key={ex}
+                  open={activeGame === ex}
+                  onOpenChange={(details) =>
+                    setActiveGame(details.open ? ex : null)
+                  }
+                  size={"lg"}
+                >
+                  <Dialog.Trigger asChild>
+                    <Button width={{ md: "8vw" }}>{ex}</Button>
+                  </Dialog.Trigger>
 
-                      <Dialog.Body>
-                        {/* Deep Breathing */}
-                        {ex === "Deep Breathing" && (
-                          <Flex direction="column" align="center" gap="1rem">
-                            <Box
-                              w={
-                                breathingStep === "Inhale" ? "150px" : "80px"
-                              }
-                              h={
-                                breathingStep === "Inhale" ? "150px" : "80px"
-                              }
-                              borderRadius="50%"
-                              bg="teal.400"
-                              transition="all 3s ease-in-out"
-                            />
-                            <Text fontSize="2xl">{breathingStep}</Text>
-                          </Flex>
-                        )}
+                  <Portal>
+                    <Dialog.Backdrop />
+                    <Dialog.Positioner>
+                      <Dialog.Content maxW="60vw" maxH="80vh">
+                        <Dialog.Header>
+                          <Dialog.Title>{ex}</Dialog.Title>
+                        </Dialog.Header>
 
-                        {/* Guided Imagery */}
-                        {ex === "Guided Imagery" && (
-                          <Box>
-                            <Text mb="1rem">
-                              Imagine you are in a serene forest. The sunlight filters
-                              through trees. You hear birds singing. You breathe in
-                              fresh air. You sit beside a calm stream. When you open
-                              your eyes, notice how relaxed you feel.
-                            </Text>
-                            <Text fontStyle="italic">(Pause, take a deep breath…)</Text>
-                          </Box>
-                        )}
+                        <Dialog.Body>
+                          {/* Deep Breathing */}
+                          {ex === "Deep Breathing" && (
+                            <Flex direction="column" align="center" gap="1rem">
+                              <Box
+                                w={breathingStep === "Inhale" ? "150px" : "80px"}
+                                h={breathingStep === "Inhale" ? "150px" : "80px"}
+                                borderRadius="50%"
+                                bg="teal.400"
+                                transition="all 3s ease-in-out"
+                              />
+                              <Text fontSize="2xl">{breathingStep}</Text>
+                            </Flex>
+                          )}
 
-                        {/* Progressive Muscle Relaxation */}
-                        {ex === "Progressive Muscle Relaxation" && (
-                          <Flex direction="column" align="center" gap="1rem">
-                            <Text>
-                              {muscleInstructions[muscleStep]}
-                            </Text>
-                            <Button
-                              onClick={() =>
-                                setMuscleStep(
-                                  (prev) =>
-                                    (prev + 1) % muscleInstructions.length
-                                )
-                              }
-                            >
-                              Next Step
-                            </Button>
-                          </Flex>
-                        )}
+                          {/* Color Match */}
+                          {ex === "Color Match" && (
+                            <Flex direction="column" align="center" gap="1rem">
+                              <Text>Select color: <b>{colorTarget}</b></Text>
+                              <Flex gap="1rem">
+                                {colors.map((c) => (
+                                  <Button
+                                    key={c}
+                                    bg={c.toLowerCase()}
+                                    color="white"
+                                    onClick={() => handleColorClick(c)}
+                                  >
+                                    {c}
+                                  </Button>
+                                ))}
+                              </Flex>
+                              <Text>{colorMessage}</Text>
+                            </Flex>
+                          )}
 
-                        {/* Stretching & Gentle Yoga */}
-                        {ex === "Stretching & Gentle Yoga" && (
-                          <Box>
-                            <Text>
-                              Stretch your arms overhead. Lean to one side. Reach
-                              down to toes. Gentle neck rolls. Repeat each stretch
-                              slowly. Hold and breathe.
-                            </Text>
-                          </Box>
-                        )}
-
-                        {/* Mindfulness Meditation */}
-                        {ex === "Mindfulness Meditation" && (
-                          <Box>
-                            <Text>
-                              Sit quietly. Focus on your breath. Notice thoughts when
-                              they arise, then gently let them go. Return to breath.
-                            </Text>
-                          </Box>
-                        )}
-
-                        {/* Loving-Kindness Meditation */}
-                        {ex === "Loving-Kindness Meditation" && (
-                          <Box>
-                            <Text>
-                              Silently repeat repetitive phrases of goodwill: “May I
-                              be happy. May I be healthy. May I be safe. May I live with
-                              ease.” Then extend these wishes to others.
-                            </Text>
-                          </Box>
-                        )}
-
-                        {/* Cognitive Behavioral Therapy */}
-                        {ex === "Cognitive Behavioral Therapy" && (
-                          <Box>
-                            <Text>
-                              Notice negative thoughts. Ask: Are they true? What’s a
-                              more balanced thought? Replace distorted thinking with
-                              kinder perspective.
-                            </Text>
-                          </Box>
-                        )}
-
-                        {/* Mindfulness-Based Cognitive Therapy */}
-                        {ex === "Mindfulness-Based Cognitive Therapy" && (
-                          <Box>
-                            <Text>
-                              Integrates mindfulness meditation with CBT to help you
-                              observe thoughts without judgment and break cycles of
-                              rumination.
-                            </Text>
-                          </Box>
-                        )}
-
-                        {/* Color Match */}
-                        {ex === "Color Match" && (
-                          <Flex direction="column" align="center" gap="1rem">
-                            <Text>Select color: <b>{colorTarget}</b></Text>
-                            <Flex gap="1rem">
-                              {colors.map((c) => (
-                                <Button
-                                  key={c}
-                                  bg={c.toLowerCase()}
-                                  color="white"
-                                  onClick={() => handleColorClick(c)}
+                          {/* Memory Flip */}
+                          {ex === "Memory Flip" && (
+                            <Flex wrap="wrap" w="250px" mx="auto">
+                              {memoryCards.map((card, i) => (
+                                <Box
+                                  key={i}
+                                  w="70px"
+                                  h="70px"
+                                  bg="gray.200"
+                                  display="flex"
+                                  alignItems="center"
+                                  justifyContent="center"
+                                  fontSize="2xl"
+                                  cursor="pointer"
+                                  onClick={() => handleFlip(i)}
                                 >
-                                  {c}
-                                </Button>
+                                  {flipped.includes(i) || matched.includes(i)
+                                    ? card
+                                    : "❓"}
+                                </Box>
                               ))}
                             </Flex>
-                            <Text>{colorMessage}</Text>
-                          </Flex>
-                        )}
+                          )}
+                        </Dialog.Body>
 
-                        {/* Memory Flip */}
-                        {ex === "Memory Flip" && (
-                          <Flex wrap="wrap" w="250px" mx="auto">
-                            {memoryCards.map((card, i) => (
-                              <Box
-                                key={i}
-                                w="70px"
-                                h="70px"
-                                bg="gray.200"
-                                display="flex"
-                                alignItems="center"
-                                justifyContent="center"
-                                fontSize="2xl"
-                                cursor="pointer"
-                                onClick={() => handleFlip(i)}
-                              >
-                                {flipped.includes(i) || matched.includes(i)
-                                  ? card
-                                  : "❓"}
-                              </Box>
-                            ))}
-                          </Flex>
-                        )}
-                      </Dialog.Body>
+                        <Dialog.Footer>
+                          <Dialog.ActionTrigger asChild>
+                            <Button variant="outline">Close</Button>
+                          </Dialog.ActionTrigger>
+                        </Dialog.Footer>
 
-                      <Dialog.Footer>
-                        <Dialog.ActionTrigger asChild>
-                          <Button variant="outline">Close</Button>
-                        </Dialog.ActionTrigger>
-                      </Dialog.Footer>
-
-                      <Dialog.CloseTrigger asChild>
-                        <CloseButton size="sm" />
-                      </Dialog.CloseTrigger>
-                    </Dialog.Content>
-                  </Dialog.Positioner>
-                </Portal>
-              </Dialog.Root>
-            ))}
+                        <Dialog.CloseTrigger asChild>
+                          <CloseButton size="sm" />
+                        </Dialog.CloseTrigger>
+                      </Dialog.Content>
+                    </Dialog.Positioner>
+                  </Portal>
+                </Dialog.Root>
+              );
+            })}
           </Flex>
         </Card.Body>
       </Card.Root>
     </Flex>
   );
 }
-
 
 
 function Report() {
@@ -1048,7 +1033,7 @@ function Analysis({ chartData }: { chartData: any[] }) {
     <Card.Root size="lg" width={{ md: "44.1vw" }} height={{ md: "26.3vw" }} mt={{ md: "1vw" }} ml={{ md: "1vw" }} letterSpacing={{ md: "-0.04vw" }}>
       <Card.Header textAlign={{ md: "left" }}>
         <Flex mt="2" gap="2">
-        <Heading size="2xl" mr={"1vw"}>Analysis ({view})</Heading>
+        <Heading size="2xl" mr={"1vw"}><Link href="https://chords.upsidedownlabs.tech/stream" target="_blank">Analysis</Link> ({view})</Heading>
           <Button width={"6vw"} onClick={() => setView("daily")}>Daily</Button>
           <Button width={"6vw"} onClick={() => setView("weekly")}>Weekly</Button>
           <Button width={"6vw"} onClick={() => setView("monthly")}>Monthly</Button>
