@@ -2,7 +2,6 @@ import { Card, Flex, Heading, Link, Text } from "@chakra-ui/react"
 import { Button } from "@chakra-ui/react"
 import { useState, useEffect, useMemo } from "react";
 import { Box } from "@chakra-ui/react";
-import { motion } from "framer-motion";
 import { Avatar } from "@chakra-ui/react"
 import { AvatarGroup } from "@chakra-ui/react"
 import jsPDF from "jspdf";
@@ -10,7 +9,7 @@ import autoTable from "jspdf-autotable";
 import "jspdf-autotable"
 import Vapi from '@vapi-ai/web';
 import { VscVr } from "react-icons/vsc";
-// import {useCycle } from "framer-motion";
+
 
 import {
   Area,
@@ -21,44 +20,6 @@ import {
   XAxis,
 } from "recharts";
 
-// function BreatheCircle() {
-//   const [scale, cycleScale] = useCycle(1, 1.5); // inhale/exhale
-//   const [isBreathing, setIsBreathing] = useState(false);
-
-//   useEffect(() => {
-//     if (!isBreathing) return;
-
-//     const interval = setInterval(() => cycleScale(), 4000);
-//     return () => clearInterval(interval);
-//   }, [isBreathing, cycleScale]);
-
-//   return (
-//     <div style={{ textAlign: "center", marginTop: "2rem" }}>
-//       <motion.div
-//         style={{
-//           width: 200,
-//           height: 200,
-//           borderRadius: "50%",
-//           backgroundColor: "#4A90E2",
-//           margin: "auto",
-//         }}
-//         animate={{ scale }}
-//         transition={{ duration: 4, ease: "easeInOut" }}
-//       />
-//       <button
-//         onClick={() => setIsBreathing(!isBreathing)}
-//         style={{
-//           marginTop: "1rem",
-//           padding: "0.5rem 1rem",
-//           fontSize: "1rem",
-//           cursor: "pointer",
-//         }}
-//       >
-//         Breathe In
-//       </button>
-//     </div>
-//   );
-// }
 
 type Doctor = {
   name: string;
@@ -588,7 +549,7 @@ function GameCard() {
 
   // States for breathing & muscle relaxation etc
   const [breathingStep, setBreathingStep] = useState<
-    "Inhale" | "Hold" | "Exhale" | "Hold2"
+    "Inhale" | "Hold" | "Exhale" | "Hold"
   >("Inhale");
   const [colorTarget, setColorTarget] = useState("Red");
   const [colorMessage, setColorMessage] = useState("");
@@ -610,8 +571,8 @@ function GameCard() {
       const sequence: any = {
         Inhale: "Hold",
         Hold: "Exhale",
-        Exhale: "Hold2",
-        Hold2: "Inhale",
+        Exhale: "Hold",
+        HoldAgain: "Inhale",
       };
       const interval = setInterval(() => {
         setBreathingStep((prev) => sequence[prev]);
@@ -660,6 +621,8 @@ function GameCard() {
 
   const exercises = [
     "Deep Breathing",
+    "Color Match",
+    "Memory Flip",
     "Guided Imagery",
     "MR",
     "Yoga",
@@ -667,8 +630,6 @@ function GameCard() {
     "Loving-Kindness",
     "BehavioralT",
     "CognitiveT",
-    "Color Match",
-    "Memory Flip",
   ];
 
   return (
@@ -1047,70 +1008,6 @@ function Report() {
   );
 }
 
-
-// const MotionBox = motion(Box);
-
-
-// function BreathingExerciseCard() {
-//   const [isExercising, setIsExercising] = useState(false);
-//   const [fill, setFill] = useState(0);
-//   const [direction, setDirection] = useState(1); // 1 = fill, -1 = empty
-
-//   useEffect(() => {
-//     let interval: number;
-//     if (isExercising) {
-//       interval = window.setInterval(() => {
-//         setFill((prev) => {
-//           let next = prev + direction * 2; // 2% per 100ms → 5s full cycle
-//           if (next >= 100) {
-//             next = 100;
-//             setDirection(-1);
-//           } else if (next <= 0) {
-//             next = 0;
-//             setDirection(1);
-//           }
-//           return next;
-//         });
-//       }, 100);
-//     }
-//     return () => clearInterval(interval);
-//   }, [isExercising, direction]);
-
-//   return (
-//     <Card.Root
-//       size="lg"
-//       width={{ md: "33vw" }}
-//       mt={{ md: "1vw" }}
-//       ml={{ md: "1vw" }}
-//       letterSpacing={{ md: "-0.04vw" }}
-//     >
-//       <Card.Header>
-//         <Heading size="2xl">Breathing Exercise</Heading>
-//       </Card.Header>
-//       <Card.Body color="fg.muted" mt={{ md: "-1vw" }} fontSize={{ md: "1.2vw" }}>
-//         <Box mb={4} textAlign="center" fontWeight="900">
-//           {isExercising ? (direction === 1 ? "Inhale" : "Exhale") : "Press Start"}
-//         </Box>
-//         <Box width="100%" height="20px" bg="gray.300" borderRadius="md" overflow="hidden">
-//           <MotionBox
-//             width={`${fill}%`}
-//             height="100%"
-//             bg={direction === 1 ? "blue.400" : "green.400"}
-//             transition={{ duration: 0.1, ease: "linear" }}
-//           />
-//         </Box>
-//         <Button
-//           mt={4}
-//           colorScheme={isExercising ? "red" : "blue"}
-//           w="full"
-//           onClick={() => setIsExercising(!isExercising)}
-//         >
-//           {isExercising ? "Stop Exercise" : "Start Exercise"}
-//         </Button>
-//       </Card.Body>
-//     </Card.Root>
-//   );
-// }
 
 function Analysis({ chartData }: { chartData: any[] }) {
   const [view, setView] = useState<"daily" | "weekly" | "monthly">("daily");
